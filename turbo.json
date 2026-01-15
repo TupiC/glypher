@@ -1,7 +1,7 @@
 {
     "$schema": "https://turborepo.dev/schema.json",
     "tasks": {
-        "glypher/cli#build": {
+        "glypher#build": {
             "dependsOn": ["glypher/wasm#build"]
         },
         "glypher/wasm#build": {

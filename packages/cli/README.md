@@ -20,15 +20,32 @@ npx glypher <command>
 
 ### Subset
 
-Subset a font file to include only specific glyphs:
+Subset a font file to include only specific glyphs. You can specify either Unicode code points or glyph IDs:
+
+**Using Unicode code points (recommended):**
 
 ```bash
-npx glypher subset -i input.ttf -o output.ttf -g 65,66,67
+# Using U+ notation
+npx glypher subset -i input.ttf -o output.ttf -g U+0041,U+0042,U+0043
+
+# Using hex notation
+npx glypher subset -i input.ttf -o output.ttf -g 0x0041,0x0042,0x0043
+
+# Using plain hex (without prefix)
+npx glypher subset -i input.ttf -o output.ttf -g 0041,0042,0043
+```
+
+**Using glyph IDs (font-specific):**
+
+```bash
+npx glypher subset -i input.ttf -o output.ttf -g 36,37,38
 ```
 
 -   `-i, --input <path>`: Input font file (required)
 -   `-o, --output <path>`: Output font file (required)
--   `-g, --glyphs <glyphs>`: Comma-separated list of glyph IDs to include (optional)
+-   `-g, --glyphs <glyphs>`: Comma-separated list of Unicode code points (U+0041, 0x0041, or 0041) or glyph IDs to include (optional)
+
+**Note:** Unicode code points are font-independent and recommended. Glyph IDs are font-specific and may vary between fonts.
 
 ### Convert
 
