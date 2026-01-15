@@ -23,18 +23,12 @@ jobs:
             release_created: ${{ steps.release.outputs.release_created }}
             tag_name: ${{ steps.release.outputs.tag_name }}
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-
             - name: Run release-please
               uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
               id: release
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
-                  config-file: release-please-config.json
-                  skip-github-pull-request: true
+                  release-type: node
 
     publish-npm:
         runs-on: ubuntu-latest
