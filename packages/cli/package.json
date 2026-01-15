@@ -1,5 +1,5 @@
 {
-    "name": "glypher/cli",
+    "name": "glypher",
     "version": "1.0.0",
     "description": "Fast and efficient font manipulation tool",
     "main": "./bin/cli.cjs",
