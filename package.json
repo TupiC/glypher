@@ -1,6 +1,6 @@
 {
     "name": "glypher",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Fast and efficient font manipulation tool",
     "scripts": {
         "build": "turbo build",
