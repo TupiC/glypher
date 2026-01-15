@@ -1,0 +1,13 @@
+[package]
+name = "glypher-wasm"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wasm-bindgen = "0.2"
+ttf-parser = "0.21"
+flate2 = "1.0"
+ttf2woff2 = "0.11.0"
+
+[lib]
+crate-type = ["cdylib"]

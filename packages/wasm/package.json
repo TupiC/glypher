@@ -1,0 +1,14 @@
+{
+    "name": "glypher/wasm",
+    "version": "1.0.0",
+    "scripts": {
+        "build": "wasm-pack build --target nodejs --out-dir ../cli/src/wasm"
+    },
+    "author": "Christoph Tupi",
+    "license": "MIT",
+    "description": "Fast and efficient font manipulation tool",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/TupiC/glypher.git"
+    }
+}

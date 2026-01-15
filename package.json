@@ -1,0 +1,22 @@
+{
+    "name": "glypher",
+    "version": "1.0.0",
+    "description": "Fast and efficient font manipulation tool",
+    "scripts": {
+        "build": "turbo build"
+    },
+    "keywords": [
+        "font",
+        "subset",
+        "convert",
+        "woff",
+        "woff2",
+        "ttf"
+    ],
+    "author": "Christoph Tupi",
+    "license": "MIT",
+    "packageManager": "pnpm@10.6.2",
+    "devDependencies": {
+        "turbo": "^2.7.4"
+    }
+}

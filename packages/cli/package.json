@@ -1,0 +1,49 @@
+{
+    "name": "glypher/cli",
+    "version": "1.0.0",
+    "description": "Fast and efficient font manipulation tool",
+    "main": "./bin/cli.cjs",
+    "bin": {
+        "glypher": "./bin/cli.cjs"
+    },
+    "files": [
+        "bin"
+    ],
+    "scripts": {
+        "build": "tsdown && cp src/wasm/glypher_wasm_bg.wasm bin/",
+        "test": "vitest",
+        "start": "tsx bin/cli.cjs",
+        "watch": "tsdown --watch",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "font",
+        "subset",
+        "convert",
+        "woff",
+        "woff2",
+        "ttf",
+        "cli"
+    ],
+    "author": "Christoph Tupi",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/TupiC/glypher.git"
+    },
+    "packageManager": "pnpm@10.6.2",
+    "dependencies": {
+        "commander": "^14.0.2"
+    },
+    "devDependencies": {
+        "@types/node": "^25.0.8",
+        "tsdown": "0.20.0-beta.3",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.17"
+    },
+    "exports": {
+        ".": "./bin/cli.cjs",
+        "./package.json": "./package.json"
+    }
+}
