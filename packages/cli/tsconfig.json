@@ -21,6 +21,7 @@
         "skipLibCheck": true
     },
     "include": [
-        "src"
+        "src",
+        "test/utils.test.ts"
     ]
 }

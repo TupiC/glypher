@@ -8,6 +8,8 @@ wasm-bindgen = "0.2"
 ttf-parser = "0.21"
 flate2 = "1.0"
 ttf2woff2 = "0.11.0"
+fontcull-klippa = "0.1.2"
+fontcull-write-fonts = { version = "0.44", features = ["read"] }
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]

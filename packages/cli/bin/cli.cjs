@@ -53,13 +53,13 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.convert_font = convert_font;
 	/**
 	* @param {Uint8Array} data
-	* @param {Uint32Array} glyphs
+	* @param {Uint16Array} glyphs
 	* @returns {Uint8Array}
 	*/
 	function subset_font(data, glyphs) {
 		const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
 		const len0 = WASM_VECTOR_LEN;
-		const ptr1 = passArray32ToWasm0(glyphs, wasm.__wbindgen_malloc);
+		const ptr1 = passArray16ToWasm0(glyphs, wasm.__wbindgen_malloc);
 		const len1 = WASM_VECTOR_LEN;
 		const ret = wasm.subset_font(ptr0, len0, ptr1, len1);
 		var v3 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
@@ -67,6 +67,22 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 		return v3;
 	}
 	exports.subset_font = subset_font;
+	/**
+	* @param {Uint8Array} data
+	* @param {Uint32Array} unicodes
+	* @returns {Uint8Array}
+	*/
+	function subset_font_by_unicodes(data, unicodes) {
+		const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+		const len0 = WASM_VECTOR_LEN;
+		const ptr1 = passArray32ToWasm0(unicodes, wasm.__wbindgen_malloc);
+		const len1 = WASM_VECTOR_LEN;
+		const ret = wasm.subset_font_by_unicodes(ptr0, len0, ptr1, len1);
+		var v3 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+		wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+		return v3;
+	}
+	exports.subset_font_by_unicodes = subset_font_by_unicodes;
 	function __wbg_get_imports() {
 		const import0 = {
 			__proto__: null,
@@ -89,6 +105,11 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 		ptr = ptr >>> 0;
 		return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
 	}
+	let cachedUint16ArrayMemory0 = null;
+	function getUint16ArrayMemory0() {
+		if (cachedUint16ArrayMemory0 === null || cachedUint16ArrayMemory0.byteLength === 0) cachedUint16ArrayMemory0 = new Uint16Array(wasm.memory.buffer);
+		return cachedUint16ArrayMemory0;
+	}
 	let cachedUint32ArrayMemory0 = null;
 	function getUint32ArrayMemory0() {
 		if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
@@ -98,6 +119,12 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 	function getUint8ArrayMemory0() {
 		if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) cachedUint8ArrayMemory0 = new Uint8Array(wasm.memory.buffer);
 		return cachedUint8ArrayMemory0;
+	}
+	function passArray16ToWasm0(arg, malloc) {
+		const ptr = malloc(arg.length * 2, 2) >>> 0;
+		getUint16ArrayMemory0().set(arg, ptr / 2);
+		WASM_VECTOR_LEN = arg.length;
+		return ptr;
 	}
 	function passArray32ToWasm0(arg, malloc) {
 		const ptr = malloc(arg.length * 4, 4) >>> 0;
@@ -157,12 +184,74 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 }));
 
 //#endregion
-//#region src/commands/subset.ts
+//#region src/commands/utils.ts
 var import_glypher_wasm = require_glypher_wasm();
+/**
+* Generates an output path based on the input path and desired format.
+* Replaces the file extension with the specified format extension.
+*
+* @param inputPath - The path to the input file
+* @param format - The desired output format (woff2 or woff)
+* @returns The generated output path with the new extension
+*/
+function generateOutputPath(inputPath, format) {
+	const ext = path.default.extname(inputPath);
+	const base = path.default.basename(inputPath, ext);
+	const dir = path.default.dirname(inputPath);
+	return path.default.join(dir, `${base}.${format}`);
+}
+/**
+* Parse a Unicode string in various formats:
+* - U+0041
+* - 0x0041
+* - 0041
+* - 65 (decimal)
+*/
+function parseUnicode(str) {
+	str = str.trim().toUpperCase();
+	if (str.startsWith("U+")) return parseInt(str.slice(2), 16);
+	if (str.startsWith("0X")) return parseInt(str.slice(2), 16);
+	if (/^[0-9A-F]+$/.test(str)) {
+		if (/[A-F]/.test(str) || str.length >= 4) {
+			const hex = parseInt(str, 16);
+			if (hex <= 1114111) return hex;
+		}
+		return parseInt(str, 10);
+	}
+	const decimal = parseInt(str, 10);
+	if (!isNaN(decimal)) return decimal;
+	return null;
+}
+
+//#endregion
+//#region src/commands/subset.ts
 function subset(inputPath, outputPath, glyphs) {
 	const data = fs.default.readFileSync(inputPath);
-	const glyphsArray = glyphs?.split(",").map(Number) || [];
-	const subsetData = (0, import_glypher_wasm.subset_font)(data, new Uint32Array(glyphsArray));
+	if (!glyphs) {
+		fs.default.writeFileSync(outputPath, data);
+		return data;
+	}
+	const unicodeValues = [];
+	const glyphValues = [];
+	let isUnicode = false;
+	for (const item of glyphs.split(",")) {
+		const unicode = parseUnicode(item);
+		if (unicode !== null) if (unicode <= 1114111) {
+			unicodeValues.push(unicode);
+			isUnicode = true;
+		} else glyphValues.push(unicode);
+		else {
+			const num = parseInt(item.trim(), 10);
+			if (!isNaN(num)) glyphValues.push(num);
+		}
+	}
+	let subsetData;
+	if (isUnicode && unicodeValues.length > 0) subsetData = (0, import_glypher_wasm.subset_font_by_unicodes)(data, new Uint32Array(unicodeValues));
+	else if (glyphValues.length > 0) subsetData = (0, import_glypher_wasm.subset_font)(data, new Uint16Array(glyphValues));
+	else {
+		fs.default.writeFileSync(outputPath, data);
+		return data;
+	}
 	fs.default.writeFileSync(outputPath, subsetData);
 	return subsetData;
 }
@@ -171,12 +260,7 @@ function subset(inputPath, outputPath, glyphs) {
 //#region src/commands/convert.ts
 function convert(inputPath, format, outputPath) {
 	const convertedData = (0, import_glypher_wasm.convert_font)(fs.default.readFileSync(inputPath), format);
-	const finalOutputPath = outputPath || (() => {
-		const ext = path.default.extname(inputPath);
-		const base = path.default.basename(inputPath, ext);
-		const dir = path.default.dirname(inputPath);
-		return path.default.join(dir, `${base}.${format}`);
-	})();
+	const finalOutputPath = outputPath || generateOutputPath(inputPath, format);
 	fs.default.writeFileSync(finalOutputPath, convertedData);
 	return convertedData;
 }
