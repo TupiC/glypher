@@ -7,7 +7,8 @@
         "glypher": "./bin/cli.cjs"
     },
     "files": [
-        "bin"
+        "bin",
+        "README.md"
     ],
     "scripts": {
         "build": "tsdown && cp src/wasm/glypher_wasm_bg.wasm bin/",
