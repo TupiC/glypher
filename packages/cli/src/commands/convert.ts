@@ -1,7 +1,7 @@
 import { convert_font } from "../wasm/glypher_wasm";
 import fs from "fs";
-import path from "path";
 import type { ConvertFormat } from "../types/convert.types";
+import { generateOutputPath } from "./utils";
 
 export function convert(
     inputPath: string,
@@ -10,15 +10,7 @@ export function convert(
 ) {
     const data = fs.readFileSync(inputPath);
     const convertedData = convert_font(data, format);
-
-    const finalOutputPath =
-        outputPath ||
-        (() => {
-            const ext = path.extname(inputPath);
-            const base = path.basename(inputPath, ext);
-            const dir = path.dirname(inputPath);
-            return path.join(dir, `${base}.${format}`);
-        })();
+    const finalOutputPath = outputPath || generateOutputPath(inputPath, format);
 
     fs.writeFileSync(finalOutputPath, convertedData);
     return convertedData;

@@ -12,7 +12,7 @@
     ],
     "scripts": {
         "build": "tsdown && cp src/wasm/glypher_wasm_bg.wasm bin/",
-        "test": "vitest",
+        "test": "vitest run",
         "start": "tsx bin/cli.cjs",
         "watch": "tsdown --watch",
         "prepublishOnly": "npm run build"

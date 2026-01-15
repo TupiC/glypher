@@ -6,6 +6,9 @@
         },
         "glypher/wasm#build": {
             "dependsOn": ["^build"]
+        },
+        "test": {
+            "dependsOn": ["^test"]
         }
     }
 }

@@ -3,7 +3,8 @@
     "version": "1.0.0",
     "description": "Fast and efficient font manipulation tool",
     "scripts": {
-        "build": "turbo build"
+        "build": "turbo build",
+        "test": "turbo test"
     },
     "keywords": [
         "font",
