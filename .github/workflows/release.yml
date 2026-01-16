@@ -30,7 +30,7 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: 22
+                  node-version: 24
 
             - name: Install Rust
               uses: dtolnay/rust-toolchain@stable
@@ -50,8 +50,6 @@ jobs:
               run: pnpm run build
 
             - name: Run semantic-release
-              uses: cycjimmy/semantic-release-action@v4
-              with:
-                  working_directory: ./packages/cli
+              run: npx semantic-release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
