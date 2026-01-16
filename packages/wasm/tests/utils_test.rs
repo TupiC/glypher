@@ -168,3 +168,11 @@ fn test_read_write_u16_be_roundtrip() {
     let read_value = read_u16_be(&bytes, 0);
     assert_eq!(original_value, read_value);
 }
+
+#[test]
+fn test_parse_unicode() {
+    assert_eq!(parse_unicode("U+0041".to_string()), Ok(65));
+    assert_eq!(parse_unicode("0x0041".to_string()), Ok(65));
+    assert_eq!(parse_unicode("0041".to_string()), Ok(65));
+    assert_eq!(parse_unicode("65".to_string()), Ok(65));
+}

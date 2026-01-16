@@ -11,24 +11,36 @@ npm install -g glypher
 or
 
 ```bash
-npx glypher@latest convert -i input.ttf -f woff2
+npx glypher -i input.ttf -f woff2
 ```
 
 ## Usage
 
-To convert a font to WOFF2:
+Glypher uses a unified command where subsetting and conversion can be done separately or together:
 
 ```bash
-glypher convert -i input.ttf -f woff2
+glypher -i <input> [-o <output>] [-f <format>] [-g <glyphs>]
 ```
 
-To subset a font:
+### Convert a font to WOFF2
 
 ```bash
-glypher subset -i input.ttf -o output.ttf -g U+0041
+glypher -i input.ttf -f woff2
 ```
 
-More information about the commands and options can be found [packages/cli/README.md](./packages/cli/README.md).
+### Subset a font
+
+```bash
+glypher -i input.ttf -o output.ttf -g U+0041,U+0042,U+0043
+```
+
+### Subset and convert in one command
+
+```bash
+glypher -i input.ttf -f woff2 -g U+0041,U+0042,U+0043 -o output.woff2
+```
+
+More information about the commands and options can be found in [packages/cli/README.md](./packages/cli/README.md).
 
 ## Packages
 

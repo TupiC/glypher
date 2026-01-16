@@ -1,6 +1,9 @@
-import { subset_font, subset_font_by_unicodes } from "../wasm/glypher_wasm";
+import {
+    subset_font,
+    subset_font_by_unicodes,
+    parse_unicode,
+} from "../wasm/glypher_wasm";
 import fs from "fs";
-import { parseUnicode } from "./utils";
 
 export function subset(inputPath: string, outputPath: string, glyphs?: string) {
     const data = fs.readFileSync(inputPath);
@@ -15,15 +18,15 @@ export function subset(inputPath: string, outputPath: string, glyphs?: string) {
     let isUnicode = false;
 
     for (const item of glyphs.split(",")) {
-        const unicode = parseUnicode(item);
-        if (unicode !== null) {
+        try {
+            const unicode = parse_unicode(item);
             if (unicode <= 0x10ffff) {
                 unicodeValues.push(unicode);
                 isUnicode = true;
             } else {
                 glyphValues.push(unicode);
             }
-        } else {
+        } catch {
             const num = parseInt(item.trim(), 10);
             if (!isNaN(num)) {
                 glyphValues.push(num);

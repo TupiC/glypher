@@ -1,7 +1,9 @@
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
+use regex::Regex;
 use std::io::Write;
 use ttf_parser::Face;
+use wasm_bindgen::prelude::*;
 
 /// Validate that the input data is a valid TTF/OTF font
 pub fn validate_ttf(data: &[u8]) -> Result<(), String> {
@@ -53,4 +55,40 @@ pub fn compress_font_data(data: &[u8]) -> Result<Vec<u8>, String> {
     encoder
         .finish()
         .map_err(|e| format!("Compression finalization failed: {}", e))
+}
+
+/// Parse a Unicode string in various formats:
+/// - U+0041
+/// - 0x0041
+/// - 0041
+/// - 65 (decimal)
+#[wasm_bindgen]
+pub fn parse_unicode(mut str: String) -> Result<u32, String> {
+    str = str.trim().to_uppercase();
+
+    //U+0041 format
+    if str.starts_with("U+") || str.starts_with("0X") {
+        return u32::from_str_radix(&str.split_at(2).1, 16)
+            .map_err(|e| format!("Invalid Unicode code point: {}", e));
+    }
+
+    //hex format
+    let hex_regex = Regex::new(r"^[0-9A-F]+$").unwrap();
+    if hex_regex.is_match(&str) {
+        //has letters or is 4+ digits), try hex first
+        let has_letters_regex = Regex::new(r"[A-F]").unwrap();
+        if has_letters_regex.is_match(&str) || str.len() >= 4 {
+            return u32::from_str_radix(&str, 16)
+                .map_err(|e| format!("Invalid Unicode code point: {}", e));
+        }
+        //try decimal
+        return str
+            .parse::<u32>()
+            .map_err(|e| format!("Invalid Unicode code point: {}", e));
+    }
+
+    //decimal format
+    return str
+        .parse::<u32>()
+        .map_err(|e| format!("Invalid Unicode code point: {}", e));
 }
