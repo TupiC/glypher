@@ -6,3 +6,4 @@ pub mod utils;
 
 pub use convert_font::convert_font;
 pub use subset_font::subset_font;
+pub use utils::parse_unicode;

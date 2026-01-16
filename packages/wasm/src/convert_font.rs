@@ -1,4 +1,4 @@
-use crate::ttf_to_woff::ttf_to_woff;
+use crate::ttf_to_woff::woff::ttf_to_woff;
 use crate::ttf_to_woff2::ttf_to_woff2;
 use crate::utils::validate_ttf;
 use wasm_bindgen::prelude::*;

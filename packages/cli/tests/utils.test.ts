@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateOutputPath, parseUnicode } from "../src/commands/utils";
+import { generateOutputPath } from "../src/commands/utils";
 import path from "path";
 
 describe("generateOutputPath", () => {
@@ -64,27 +64,5 @@ describe("generateOutputPath", () => {
         const inputPath = "font.ttf";
         const result = generateOutputPath(inputPath, "woff");
         expect(result).toBe(path.join(".", "font.woff"));
-    });
-});
-
-describe("parseUnicode", () => {
-    it("should parse U+0041 as 65", () => {
-        const result = parseUnicode("U+0041");
-        expect(result).toBe(65);
-    });
-
-    it("should parse 0x0041 as 65", () => {
-        const result = parseUnicode("0x0041");
-        expect(result).toBe(65);
-    });
-
-    it("should parse 0041 as 65", () => {
-        const result = parseUnicode("0041");
-        expect(result).toBe(65);
-    });
-
-    it("should parse 65 as 65", () => {
-        const result = parseUnicode("65");
-        expect(result).toBe(65);
     });
 });
