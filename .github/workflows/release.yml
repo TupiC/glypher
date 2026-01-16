@@ -6,7 +6,10 @@ on:
             - main
 
 permissions:
-    contents: read
+    contents: write # to be able to publish a GitHub release
+    issues: write # to be able to comment on released issues
+    pull-requests: write # to be able to comment on released pull requests
+    id-token: write # to enable use of OIDC for trusted publishing and npm provenance
 
 jobs:
     release:
@@ -31,6 +34,9 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 24
+
+            - name: Check npm version
+              run: npm --version
 
             - name: Install Rust
               uses: dtolnay/rust-toolchain@stable
