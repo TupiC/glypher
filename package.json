@@ -16,6 +16,10 @@
     ],
     "author": "Christoph Tupi",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/TupiC/glypher.git"
+    },
     "packageManager": "pnpm@10.6.2",
     "devDependencies": {
         "turbo": "^2.7.4"
