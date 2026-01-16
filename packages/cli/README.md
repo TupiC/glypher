@@ -58,6 +58,9 @@ Subset a font to include only specific glyphs:
 **Using Unicode code points (recommended):**
 
 ```bash
+# Using range notation
+npx glypher -i input.ttf -o output.ttf -r LATIN_BASIC
+
 # Using U+ notation
 npx glypher -i input.ttf -o output.ttf -g U+0041,U+0042,U+0043
 

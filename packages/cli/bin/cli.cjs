@@ -37,38 +37,6 @@ os = __toESM(os);
 
 //#region src/wasm/glypher_wasm.js
 var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
-	var ByteStream = class ByteStream {
-		static __wrap(ptr) {
-			ptr = ptr >>> 0;
-			const obj = Object.create(ByteStream.prototype);
-			obj.__wbg_ptr = ptr;
-			ByteStreamFinalization.register(obj, obj.__wbg_ptr, obj);
-			return obj;
-		}
-		__destroy_into_raw() {
-			const ptr = this.__wbg_ptr;
-			this.__wbg_ptr = 0;
-			ByteStreamFinalization.unregister(this);
-			return ptr;
-		}
-		free() {
-			const ptr = this.__destroy_into_raw();
-			wasm.__wbg_bytestream_free(ptr, 0);
-		}
-		/**
-		* @returns {number}
-		*/
-		offset() {
-			return wasm.bytestream_offset(this.__wbg_ptr) >>> 0;
-		}
-		/**
-		* @returns {number}
-		*/
-		size() {
-			return wasm.bytestream_size(this.__wbg_ptr) >>> 0;
-		}
-	};
-	if (Symbol.dispose) ByteStream.prototype[Symbol.dispose] = ByteStream.prototype.free;
 	/**
 	* @param {Uint8Array} data
 	* @param {string} format
@@ -137,9 +105,6 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 	function __wbg_get_imports() {
 		const import0 = {
 			__proto__: null,
-			__wbg___wbindgen_throw_be289d5034ed271b: function(arg0, arg1) {
-				throw new Error(getStringFromWasm0(arg0, arg1));
-			},
 			__wbindgen_cast_0000000000000001: function(arg0, arg1) {
 				return getStringFromWasm0(arg0, arg1);
 			},
@@ -158,10 +123,6 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 			"./glypher_wasm_bg.js": import0
 		};
 	}
-	const ByteStreamFinalization = typeof FinalizationRegistry === "undefined" ? {
-		register: () => {},
-		unregister: () => {}
-	} : new FinalizationRegistry((ptr) => wasm.__wbg_bytestream_free(ptr >>> 0, 1));
 	function getArrayU8FromWasm0(ptr, len) {
 		ptr = ptr >>> 0;
 		return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
@@ -321,13 +282,84 @@ function convert(inputPath, format, outputPath) {
 }
 
 //#endregion
+//#region src/types/ranges.types.ts
+/**
+* Predefined character ranges.
+* To add a new range:
+* 1. Add a new key to this object
+* 2. Define the ranges as [start, end] tuples (inclusive)
+* 3. The CLI will automatically pick up the new range
+*/
+const CHARACTER_RANGES = {
+	US_ASCII: {
+		name: "US_ASCII",
+		description: "Printable US-ASCII characters (0x20-0x7E)",
+		ranges: [[32, 126]]
+	},
+	LATIN: {
+		name: "LATIN",
+		description: "Latin characters including Basic Latin, Latin-1 Supplement, and Latin Extended A/B",
+		ranges: [
+			[32, 127],
+			[128, 255],
+			[256, 383],
+			[384, 591]
+		]
+	},
+	LATIN_BASIC: {
+		name: "LATIN_BASIC",
+		description: "Basic Latin and Latin-1 Supplement (0x20-0xFF)",
+		ranges: [[32, 127], [128, 255]]
+	},
+	CYRILLIC: {
+		name: "CYRILLIC",
+		description: "Cyrillic characters",
+		ranges: [[1024, 1279], [1280, 1327]]
+	},
+	GREEK: {
+		name: "GREEK",
+		description: "Greek and Coptic characters",
+		ranges: [[880, 1023], [7936, 8191]]
+	}
+};
+/**
+* Get all available range names for CLI choices
+*/
+function getAvailableRangeNames() {
+	return Object.keys(CHARACTER_RANGES);
+}
+/**
+* Expand a character range definition into an array of Unicode code points
+*/
+function expandRange(rangeName) {
+	const range = CHARACTER_RANGES[rangeName];
+	if (!range) throw new Error(`Unknown character range: ${rangeName}`);
+	const codePoints = [];
+	for (const [start, end] of range.ranges) for (let i = start; i <= end; i++) codePoints.push(i);
+	return codePoints;
+}
+/**
+* Expand multiple range names into a deduplicated array of Unicode code points
+*/
+function expandRanges(rangeNames) {
+	const codePointSet = /* @__PURE__ */ new Set();
+	for (const name of rangeNames) for (const cp of expandRange(name)) codePointSet.add(cp);
+	return Array.from(codePointSet).sort((a, b) => a - b);
+}
+
+//#endregion
 //#region src/cli.ts
 const program = new commander.Command();
-program.name("glypher").description("A font manipulation CLI tool").version("1.0.0").requiredOption("-i, --input <path>", "Input font file").option("-o, --output <path>", "Output font file").addOption(new commander.Option("-f, --format <format>", "Convert to format (woff2 or woff)").choices(["woff2", "woff"])).option("-g, --glyphs <glyphs>", "Glyphs to subset (Unicode code points or glyph IDs)").action((opts) => {
-	const { input, output, format, glyphs } = opts;
-	if (!format && !glyphs) {
-		console.error("Error: At least one of --format or --glyphs must be specified");
+program.name("glypher").description("A font manipulation CLI tool").version("1.0.0").requiredOption("-i, --input <path>", "Input font file").option("-o, --output <path>", "Output font file").addOption(new commander.Option("-f, --format <format>", "Convert to format (woff2 or woff)").choices(["woff2", "woff"])).option("-g, --glyphs <glyphs>", "Glyphs to subset (Unicode code points or glyph IDs)").addOption(new commander.Option("-r, --range <ranges...>", "Predefined character range(s) for subsetting").choices(getAvailableRangeNames())).action((opts) => {
+	const { input, output, format, glyphs, range } = opts;
+	if (!format && !glyphs && !range) {
+		console.error("Error: At least one of --format, --glyphs, or --range must be specified");
 		process.exit(1);
+	}
+	let effectiveGlyphs = glyphs;
+	if (range && range.length > 0) {
+		const rangeStr = expandRanges(range).map((cp) => `U+${cp.toString(16).toUpperCase().padStart(4, "0")}`).join(",");
+		effectiveGlyphs = glyphs ? `${glyphs},${rangeStr}` : rangeStr;
 	}
 	let outputPath = output;
 	if (!outputPath) if (format) outputPath = generateOutputPath(input, format);
@@ -335,15 +367,15 @@ program.name("glypher").description("A font manipulation CLI tool").version("1.0
 		console.error("Error: --output is required when only subsetting");
 		process.exit(1);
 	}
-	if (glyphs && format) {
+	if (effectiveGlyphs && format) {
 		const tempPath = path.default.join(os.default.tmpdir(), `glypher-temp-${Date.now()}${path.default.extname(input)}`);
 		try {
-			subset(input, tempPath, glyphs);
+			subset(input, tempPath, effectiveGlyphs);
 			convert(tempPath, format, outputPath);
 		} finally {
 			if (fs.default.existsSync(tempPath)) fs.default.unlinkSync(tempPath);
 		}
-	} else if (glyphs) subset(input, outputPath, glyphs);
+	} else if (effectiveGlyphs) subset(input, outputPath, effectiveGlyphs);
 	else if (format) convert(input, format, outputPath);
 	console.log(`Output written to: ${outputPath}`);
 });
