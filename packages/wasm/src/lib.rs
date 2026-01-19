@@ -7,6 +7,7 @@ pub mod crawler;
 pub mod utils;
 
 pub use convert_font::convert_font;
+#[cfg(target_arch = "wasm32")]
 pub use crawler::crawl_and_extract_glyphs;
 pub use subset_font::subset_font;
 pub use utils::parse_unicode;

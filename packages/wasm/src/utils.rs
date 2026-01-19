@@ -1,6 +1,5 @@
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
-use regex::Regex;
 use std::io::Write;
 use ttf_parser::Face;
 use wasm_bindgen::prelude::*;
@@ -73,11 +72,9 @@ pub fn parse_unicode(mut str: String) -> Result<u32, String> {
     }
 
     //hex format
-    let hex_regex = Regex::new(r"^[0-9A-F]+$").unwrap();
-    if hex_regex.is_match(&str) {
+    if is_hex_regex(&str) {
         //has letters or is 4+ digits), try hex first
-        let has_letters_regex = Regex::new(r"[A-F]").unwrap();
-        if has_letters_regex.is_match(&str) || str.len() >= 4 {
+        if has_letters_regex(&str) || str.len() >= 4 {
             return u32::from_str_radix(&str, 16)
                 .map_err(|e| format!("Invalid Unicode code point: {}", e));
         }
@@ -91,4 +88,15 @@ pub fn parse_unicode(mut str: String) -> Result<u32, String> {
     return str
         .parse::<u32>()
         .map_err(|e| format!("Invalid Unicode code point: {}", e));
+}
+
+pub fn is_hex_regex(s: &str) -> bool {
+    !s.is_empty()
+        && s.as_bytes()
+            .iter()
+            .all(|&b| b.is_ascii_digit() || (b'A'..=b'F').contains(&b))
+}
+
+pub fn has_letters_regex(s: &str) -> bool {
+    !s.is_empty() && s.as_bytes().iter().any(|&b| (b'A'..=b'F').contains(&b))
 }

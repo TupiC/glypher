@@ -414,7 +414,7 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 				return arg0.value;
 			},
 			__wbindgen_cast_0000000000000001: function(arg0, arg1) {
-				return makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h31919163eec10550, wasm_bindgen__convert__closures_____invoke__hb1d6d81a3445c018);
+				return makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__ha6d10a81ea47cd8b, wasm_bindgen__convert__closures_____invoke__hc66936fe36679af2);
 			},
 			__wbindgen_cast_0000000000000002: function(arg0, arg1) {
 				return makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h08972669d3288663, wasm_bindgen__convert__closures_____invoke__hc612c92cdc2fa186);
@@ -437,8 +437,8 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 			"./glypher_wasm_bg.js": import0
 		};
 	}
-	function wasm_bindgen__convert__closures_____invoke__hb1d6d81a3445c018(arg0, arg1) {
-		wasm.wasm_bindgen__convert__closures_____invoke__hb1d6d81a3445c018(arg0, arg1);
+	function wasm_bindgen__convert__closures_____invoke__hc66936fe36679af2(arg0, arg1) {
+		wasm.wasm_bindgen__convert__closures_____invoke__hc66936fe36679af2(arg0, arg1);
 	}
 	function wasm_bindgen__convert__closures_____invoke__hc612c92cdc2fa186(arg0, arg1, arg2) {
 		wasm.wasm_bindgen__convert__closures_____invoke__hc612c92cdc2fa186(arg0, arg1, arg2);
@@ -716,7 +716,7 @@ function convert(inputPath, format, outputPath) {
 
 //#endregion
 //#region package.json
-var version = "1.1.0";
+var version = "1.2.0";
 
 //#endregion
 //#region src/utils.ts
