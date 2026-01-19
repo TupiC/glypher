@@ -9,7 +9,7 @@ Thank you for your interest in contributing to glypher! We welcome contributions
 -   [Node.js](https://nodejs.org/) (version compatible with pnpm 10.6.2)
 -   [pnpm](https://pnpm.io/) (version 10.6.2 or compatible)
 -   [Rust](https://www.rust-lang.org/) (for working on the WASM package)
--   [wasm-pack](https://rustwasm.github.io/wasm-pack/) (for building the WASM package)
+-   [wasm-pack](https://github.com/drager/wasm-pack) (for building the WASM package)
 
 ### Setting Up the Development Environment
 
