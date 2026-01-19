@@ -5,24 +5,34 @@ import { subset } from "./commands/subset";
 import { convert } from "./commands/convert";
 import type { ConvertFormat } from "./types/convert.types";
 import { generateOutputPath } from "./commands/utils";
-import { getAvailableRangeNames, expandRanges } from "./types/ranges.types";
+import { get_available_range_names, expand_ranges } from "./wasm/glypher_wasm";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import packageJson from "../package.json";
+
+// Helper functions to wrap WASM exports
+function getAvailableRangeNames(): string[] {
+    return JSON.parse(get_available_range_names());
+}
+
+function expandRanges(rangeNames: string[]): number[] {
+    return Array.from(expand_ranges(JSON.stringify(rangeNames)));
+}
 
 const program = new Command();
 
 program
     .name("glypher")
     .description("A font manipulation CLI tool")
-    .version("1.0.0")
+    .version(packageJson.version)
     .requiredOption("-i, --input <path>", "Input font file")
     .option("-o, --output <path>", "Output font file")
     .addOption(
-        new Option(
-            "-f, --format <format>",
-            "Convert to format (woff2 or woff)"
-        ).choices(["woff2", "woff"])
+        new Option("-f, --format <format>", "Convert to format").choices([
+            "woff2",
+            "woff",
+        ])
     )
     .option(
         "-g, --glyphs <glyphs>",

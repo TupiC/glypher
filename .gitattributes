@@ -1,0 +1,5 @@
+*.ts linguist-language=TypeScript
+
+*.js linguist-generated
+*.cjs linguist-generated
+
