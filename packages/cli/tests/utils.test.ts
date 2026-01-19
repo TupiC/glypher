@@ -1,14 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import path from "path";
 
-// Mock the WASM module before importing utils
-vi.mock("../src/wasm/glypher_wasm", () => ({
-    get_available_range_names: vi.fn(),
-    expand_ranges: vi.fn(),
-    find_best_matching_ranges_wasm: vi.fn(),
-    format_range_matches_wasm: vi.fn(),
-}));
-
 // Mock the commands
 vi.mock("../src/commands/subset", () => ({
     subset: vi.fn(),
