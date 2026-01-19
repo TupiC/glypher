@@ -1,68 +1,184 @@
-import { describe, it, expect } from "vitest";
-import { generateOutputPath } from "../src/commands/utils";
+import { describe, it, expect, vi } from "vitest";
 import path from "path";
 
-describe("generateOutputPath", () => {
-    it("should replace .ttf extension with .woff2", () => {
-        const inputPath = "/path/to/font.ttf";
-        const result = generateOutputPath(inputPath, "woff2");
+// Mock the commands
+vi.mock("../src/commands/subset", () => ({
+    subset: vi.fn(),
+}));
+
+vi.mock("../src/commands/convert", () => ({
+    convert: vi.fn(),
+}));
+
+import {
+    glyphsToUnicodeFormat,
+    codePointsToUnicodeFormat,
+    determineOutputPath,
+} from "../src/utils";
+
+describe("glyphsToUnicodeFormat", () => {
+    it("should convert a single ASCII character to Unicode format", () => {
+        expect(glyphsToUnicodeFormat("A")).toBe("U+0041");
+    });
+
+    it("should convert multiple ASCII characters", () => {
+        expect(glyphsToUnicodeFormat("ABC")).toBe("U+0041,U+0042,U+0043");
+    });
+
+    it("should handle lowercase letters", () => {
+        expect(glyphsToUnicodeFormat("abc")).toBe("U+0061,U+0062,U+0063");
+    });
+
+    it("should handle digits", () => {
+        expect(glyphsToUnicodeFormat("123")).toBe("U+0031,U+0032,U+0033");
+    });
+
+    it("should handle special characters", () => {
+        expect(glyphsToUnicodeFormat("!@#")).toBe("U+0021,U+0040,U+0023");
+    });
+
+    it("should handle Unicode characters beyond ASCII", () => {
+        expect(glyphsToUnicodeFormat("é")).toBe("U+00E9");
+        expect(glyphsToUnicodeFormat("中")).toBe("U+4E2D");
+    });
+
+    it("should handle emoji (surrogate pairs)", () => {
+        expect(glyphsToUnicodeFormat("😀")).toBe("U+1F600");
+    });
+
+    it("should handle mixed ASCII and Unicode characters", () => {
+        expect(glyphsToUnicodeFormat("Aé中")).toBe("U+0041,U+00E9,U+4E2D");
+    });
+
+    it("should handle empty string", () => {
+        expect(glyphsToUnicodeFormat("")).toBe("");
+    });
+
+    it("should handle space character", () => {
+        expect(glyphsToUnicodeFormat(" ")).toBe("U+0020");
+    });
+
+    it("should pad code points to at least 4 digits", () => {
+        // Tab character (U+0009)
+        expect(glyphsToUnicodeFormat("\t")).toBe("U+0009");
+    });
+});
+
+describe("codePointsToUnicodeFormat", () => {
+    it("should convert a single code point to Unicode format", () => {
+        expect(codePointsToUnicodeFormat([65])).toBe("U+0041");
+    });
+
+    it("should convert multiple code points", () => {
+        expect(codePointsToUnicodeFormat([65, 66, 67])).toBe("U+0041,U+0042,U+0043");
+    });
+
+    it("should handle code points beyond BMP", () => {
+        // Emoji grinning face
+        expect(codePointsToUnicodeFormat([0x1F600])).toBe("U+1F600");
+    });
+
+    it("should handle mixed code points", () => {
+        expect(codePointsToUnicodeFormat([65, 0x00E9, 0x4E2D])).toBe("U+0041,U+00E9,U+4E2D");
+    });
+
+    it("should handle empty array", () => {
+        expect(codePointsToUnicodeFormat([])).toBe("");
+    });
+
+    it("should pad small code points to 4 digits", () => {
+        expect(codePointsToUnicodeFormat([9])).toBe("U+0009");
+        expect(codePointsToUnicodeFormat([1])).toBe("U+0001");
+    });
+
+    it("should handle code points with more than 4 hex digits", () => {
+        expect(codePointsToUnicodeFormat([0x10000])).toBe("U+10000");
+        expect(codePointsToUnicodeFormat([0x10FFFF])).toBe("U+10FFFF");
+    });
+});
+
+describe("determineOutputPath", () => {
+    it("should return output path if provided", () => {
+        const result = determineOutputPath(
+            "/path/to/input.ttf",
+            "/path/to/output.woff2",
+            undefined
+        );
+        expect(result).toBe("/path/to/output.woff2");
+    });
+
+    it("should return output path even when format is provided", () => {
+        const result = determineOutputPath(
+            "/path/to/input.ttf",
+            "/path/to/output.woff2",
+            "woff2"
+        );
+        expect(result).toBe("/path/to/output.woff2");
+    });
+
+    it("should generate output path from format when no output specified", () => {
+        const result = determineOutputPath(
+            "/path/to/font.ttf",
+            undefined,
+            "woff2"
+        );
         expect(result).toBe("/path/to/font.woff2");
     });
 
-    it("should replace .ttf extension with .woff", () => {
-        const inputPath = "/path/to/font.ttf";
-        const result = generateOutputPath(inputPath, "woff");
+    it("should generate output path with woff format", () => {
+        const result = determineOutputPath(
+            "/path/to/font.ttf",
+            undefined,
+            "woff"
+        );
         expect(result).toBe("/path/to/font.woff");
     });
 
-    it("should replace .otf extension with .woff2", () => {
-        const inputPath = "/path/to/font.otf";
-        const result = generateOutputPath(inputPath, "woff2");
-        expect(result).toBe("/path/to/font.woff2");
+    it("should generate subset output path when no output and no format", () => {
+        const result = determineOutputPath(
+            "/path/to/font.ttf",
+            undefined,
+            undefined,
+            true
+        );
+        expect(result).toBe(path.join("/path/to", "font-subset.ttf"));
     });
 
-    it("should handle files without extension", () => {
-        const inputPath = "/path/to/font";
-        const result = generateOutputPath(inputPath, "woff2");
-        expect(result).toBe("/path/to/font.woff2");
+    it("should preserve file extension for subset output", () => {
+        const result = determineOutputPath(
+            "/path/to/font.otf",
+            undefined,
+            undefined,
+            true
+        );
+        expect(result).toBe(path.join("/path/to", "font-subset.otf"));
     });
 
-    it("should handle files with multiple dots in name", () => {
-        const inputPath = "/path/to/font.name.ttf";
-        const result = generateOutputPath(inputPath, "woff2");
-        expect(result).toBe("/path/to/font.name.woff2");
-    });
-
-    it("should preserve directory structure", () => {
-        const inputPath = "/deep/nested/path/to/font.ttf";
-        const result = generateOutputPath(inputPath, "woff2");
-        expect(result).toBe("/deep/nested/path/to/font.woff2");
+    it("should handle files with multiple dots in name for subset", () => {
+        const result = determineOutputPath(
+            "/path/to/font.name.ttf",
+            undefined,
+            undefined,
+            true
+        );
+        expect(result).toBe(path.join("/path/to", "font.name-subset.ttf"));
     });
 
     it("should handle relative paths", () => {
-        const inputPath = "./fonts/myfont.ttf";
-        const result = generateOutputPath(inputPath, "woff2");
+        const result = determineOutputPath(
+            "./fonts/myfont.ttf",
+            undefined,
+            "woff2"
+        );
         expect(result).toBe(path.join(".", "fonts", "myfont.woff2"));
     });
 
-    it("should handle Windows-style paths", () => {
-        const inputPath = "C:\\Users\\Fonts\\font.ttf";
-        const result = generateOutputPath(inputPath, "woff2");
-        // path.join normalizes paths based on the platform
-        // Just verify the extension is replaced correctly
-        expect(result.endsWith("font.woff2")).toBe(true);
-        expect(result).not.toContain(".ttf");
-    });
-
-    it("should handle files in root directory", () => {
-        const inputPath = "/font.ttf";
-        const result = generateOutputPath(inputPath, "woff2");
-        expect(result).toBe("/font.woff2");
-    });
-
-    it("should handle current directory", () => {
-        const inputPath = "font.ttf";
-        const result = generateOutputPath(inputPath, "woff");
-        expect(result).toBe(path.join(".", "font.woff"));
+    it("should handle files in current directory", () => {
+        const result = determineOutputPath(
+            "font.ttf",
+            undefined,
+            "woff2"
+        );
+        expect(result).toBe(path.join(".", "font.woff2"));
     });
 });

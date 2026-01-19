@@ -12,7 +12,8 @@
         "convert",
         "woff",
         "woff2",
-        "ttf"
+        "ttf",
+        "cli"
     ],
     "author": "Christoph Tupi",
     "license": "MIT",

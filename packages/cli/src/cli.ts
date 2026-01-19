@@ -4,25 +4,29 @@ import { Command, Option } from "commander";
 import { subset } from "./commands/subset";
 import { convert } from "./commands/convert";
 import type { ConvertFormat } from "./types/convert.types";
-import { generateOutputPath } from "./commands/utils";
-import { getAvailableRangeNames, expandRanges } from "./types/ranges.types";
+import {
+    crawl
+} from "./wasm/glypher_wasm";
 import fs from "fs";
-import path from "path";
-import os from "os";
+import packageJson from "../package.json";
+import { getAvailableRangeNames, findBestMatchingRanges, formatRangeMatches, codePointsToUnicodeFormat, expandRanges, glyphsToUnicodeFormat, determineOutputPath, performSubsetAndConvert } from './utils';
+
 
 const program = new Command();
 
+//todo add silent option (no logs)
 program
     .name("glypher")
     .description("A font manipulation CLI tool")
-    .version("1.0.0")
-    .requiredOption("-i, --input <path>", "Input font file")
+    .version(packageJson.version)
+    .enablePositionalOptions()
+    .option("-i, --input <path>", "Input font file")
     .option("-o, --output <path>", "Output font file")
     .addOption(
-        new Option(
-            "-f, --format <format>",
-            "Convert to format (woff2 or woff)"
-        ).choices(["woff2", "woff"])
+        new Option("-f, --format <format>", "Convert to format").choices([
+            "woff2",
+            "woff",
+        ])
     )
     .option(
         "-g, --glyphs <glyphs>",
@@ -34,20 +38,115 @@ program
             "Predefined character range(s) for subsetting"
         ).choices(getAvailableRangeNames())
     )
+    .option("--crawl", "Crawl a website to extract glyphs for subsetting")
+    .option("-u, --url <url>", "URL to crawl (requires --crawl)")
+    .option("-d, --depth <depth>", "Crawl depth (0 = single page only)", "0")
+    .option(
+        "--use-range",
+        "Use best matching range instead of exact glyphs (with --crawl)"
+    )
     .action(
-        (opts: {
-            input: string;
+        async (opts: {
+            input?: string;
             output?: string;
             format?: ConvertFormat;
             glyphs?: string;
             range?: string[];
+            crawl?: boolean;
+            url?: string;
+            depth?: string;
+            useRange?: boolean;
         }) => {
-            const { input, output, format, glyphs, range } = opts;
+            const { input, output, format, glyphs, range, url, depth, useRange } = opts;
 
-            // Validate that at least one operation is specified
+            // Handle crawl mode
+            if (opts.crawl) {
+                if (!url) {
+                    console.error("Error: --url is required when using --crawl");
+                    process.exit(1);
+                }
+
+                const crawlDepth = parseInt(depth || "0", 10);
+                if (isNaN(crawlDepth) || crawlDepth < 0) {
+                    console.error("Error: depth must be a non-negative integer");
+                    process.exit(1);
+                }
+
+                console.log(`\nCrawling ${url} with depth ${crawlDepth}...\n`);
+
+                try {
+                    const crawledGlyphs = await crawl(url, crawlDepth);
+
+                    if (!crawledGlyphs || crawledGlyphs.length === 0) {
+                        console.log("No glyphs found on the website.");
+                        process.exit(0);
+                    }
+
+                    // Display found glyphs
+                    console.log(`\n=== Found ${crawledGlyphs.length} unique glyphs ===\n`);
+                    const sampleSize = Math.min(100, crawledGlyphs.length);
+                    console.log(`Sample (first ${sampleSize} chars): ${crawledGlyphs.slice(0, sampleSize)}`);
+                    if (crawledGlyphs.length > sampleSize) {
+                        console.log(`... and ${crawledGlyphs.length - sampleSize} more`);
+                    }
+
+                    // Find and display best matching ranges
+                    const matches = findBestMatchingRanges(crawledGlyphs);
+
+                    if (matches.length > 0) {
+                        console.log("\n=== Best Matching Character Ranges ===\n");
+                        console.log(formatRangeMatches(matches));
+
+                        const bestMatch = matches[0];
+                        console.log(`\nRecommendation: Use "${bestMatch.name}" range`);
+                        console.log(`  - Covers ${bestMatch.range_coverage_percent.toFixed(1)}% of the range`);
+                        console.log(`  - ${bestMatch.glyphs_in_range}/${bestMatch.total_range_size} characters used`);
+                        if (bestMatch.glyphs_outside_range > 0) {
+                            console.log(`  - ${bestMatch.glyphs_outside_range} glyphs fall outside this range`);
+                        }
+                        if (!useRange) {
+                            console.log("\nTip: Use --use-range to subset using the best matching range");
+                        }
+                    }
+
+                    // Process font if input is provided
+                    if (input) {
+                        if (!fs.existsSync(input)) {
+                            console.error(`\nError: Input font file not found: ${input}`);
+                            process.exit(1);
+                        }
+
+                        let effectiveGlyphs: string;
+
+                        if (useRange && matches.length > 0) {
+                            const bestRange = matches[0].name;
+                            console.log(`\n=== Converting font using "${bestRange}" range ===\n`);
+                            effectiveGlyphs = codePointsToUnicodeFormat(expandRanges([bestRange]));
+                        } else {
+                            console.log("\n=== Converting font using exact glyphs found ===\n");
+                            effectiveGlyphs = glyphsToUnicodeFormat(crawledGlyphs);
+                        }
+
+                        const outputPath = determineOutputPath(input, output, format, true);
+                        performSubsetAndConvert(input, outputPath, effectiveGlyphs, format);
+                        console.log(`Output written to: ${outputPath}`);
+                    }
+                } catch (error) {
+                    console.error("Error during crawl:", error);
+                    process.exit(1);
+                }
+                return;
+            }
+
+            // Standard mode (non-crawl)
+            if (!input) {
+                console.error("Error: --input is required");
+                process.exit(1);
+            }
+
             if (!format && !glyphs && !range) {
                 console.error(
-                    "Error: At least one of --format, --glyphs, or --range must be specified"
+                    "Error: At least one of -f, --format; -g --glyphs; -r --range or --crawl must be specified"
                 );
                 process.exit(1);
             }
@@ -55,54 +154,19 @@ program
             // Expand ranges to Unicode code points if specified
             let effectiveGlyphs = glyphs;
             if (range && range.length > 0) {
-                const rangeCodePoints = expandRanges(range);
-                const rangeStr = rangeCodePoints
-                    .map(
-                        (cp) =>
-                            `U+${cp
-                                .toString(16)
-                                .toUpperCase()
-                                .padStart(4, "0")}`
-                    )
-                    .join(",");
-                // Combine with existing glyphs if any
+                const rangeStr = codePointsToUnicodeFormat(expandRanges(range));
                 effectiveGlyphs = glyphs ? `${glyphs},${rangeStr}` : rangeStr;
             }
 
             // Determine output path
-            let outputPath = output;
-            if (!outputPath) {
-                if (format) {
-                    outputPath = generateOutputPath(input, format);
-                } else {
-                    console.error(
-                        "Error: --output is required when only subsetting"
-                    );
-                    process.exit(1);
-                }
-            }
+            const outputPath = determineOutputPath(input, output, format, !format);
 
             // Handle the different operation combinations
             if (effectiveGlyphs && format) {
-                // Both subset and convert: subset to temp file, then convert
-                const tempPath = path.join(
-                    os.tmpdir(),
-                    `glypher-temp-${Date.now()}${path.extname(input)}`
-                );
-                try {
-                    subset(input, tempPath, effectiveGlyphs);
-                    convert(tempPath, format, outputPath);
-                } finally {
-                    // Clean up temp file
-                    if (fs.existsSync(tempPath)) {
-                        fs.unlinkSync(tempPath);
-                    }
-                }
+                performSubsetAndConvert(input, outputPath, effectiveGlyphs, format);
             } else if (effectiveGlyphs) {
-                // Only subset
                 subset(input, outputPath, effectiveGlyphs);
             } else if (format) {
-                // Only convert
                 convert(input, format, outputPath);
             }
 
