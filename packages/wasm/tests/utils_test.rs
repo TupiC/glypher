@@ -176,3 +176,37 @@ fn test_parse_unicode() {
     assert_eq!(parse_unicode("0041".to_string()), Ok(65));
     assert_eq!(parse_unicode("65".to_string()), Ok(65));
 }
+
+#[test]
+fn test_is_hex_regex() {
+    //valid
+    assert!(is_hex_regex("1234567890"));
+    assert!(is_hex_regex("ABCDEF"));
+    assert!(is_hex_regex("1A2B3C"));
+
+    //invalid
+    assert!(!is_hex_regex("GHIJKL"), "Should not accept non-hex letters");
+    assert!(
+        !is_hex_regex("abc"),
+        "Current regex is case-sensitive (uppercase only)"
+    );
+    assert!(!is_hex_regex("1A 2B"), "Should not accept spaces");
+    assert!(
+        !is_hex_regex(""),
+        "Empty string should be false due to '+' quantifier"
+    );
+}
+
+#[test]
+fn test_has_letters_regex() {
+    // valid
+    assert!(has_letters_regex("A123"));
+    assert!(has_letters_regex("123F"));
+    assert!(has_letters_regex("ABC"));
+    assert!(has_letters_regex("F"));
+
+    // invalid: no A–F letters
+    assert!(!has_letters_regex("123456"));
+    assert!(!has_letters_regex(""));
+    assert!(!has_letters_regex("abc"));
+}
