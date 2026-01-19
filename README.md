@@ -2,6 +2,10 @@
 
 Fast and efficient font manipulation tool.
 
+[![npm version](https://img.shields.io/npm/v/glypher)](https://www.npmjs.com/package/glypher)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+![npm](https://img.shields.io/npm/dt/glypher)
+
 Glypher is a successor of [glyphhanger](https://github.com/zachleat/glyphhanger), providing fast and efficient font manipulation tools. You had to install external tools like `pyftsubset`, `brotli` or `zopfli` to enable specific features. This project focuses on providing all the features in a single tool without the need for external installations or dependencies.
 
 The `glypher` CLI provides a TypeScript interface that wraps the core WebAssembly functionality for font subsetting and conversion operations.
