@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet, VecDeque};
 use wasm_bindgen::prelude::*;
 
-use super::utils::{extract_glyphs_from_attributes, extract_glyphs_from_html};
+use super::utils::{console_log, extract_glyphs_from_attributes, extract_glyphs_from_html};
 
 /// Result of crawling a website for glyphs
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,12 +49,15 @@ pub async fn crawl_and_extract_glyphs(url: &str, depth: u8) -> Result<CrawlResul
             continue;
         }
 
-        println!("Crawling [depth {}]: {}", current_depth, current_url);
+        console_log(&format!(
+            "Crawling [depth {}]: {}",
+            current_depth, current_url
+        ));
 
         let response = match reqwest::get(&current_url).await {
             Ok(resp) => resp,
             Err(e) => {
-                eprintln!("Failed to fetch {}: {}", current_url, e);
+                console_log(&format!("Failed to fetch {}: {}", current_url, e));
                 continue;
             }
         };
@@ -66,14 +69,14 @@ pub async fn crawl_and_extract_glyphs(url: &str, depth: u8) -> Result<CrawlResul
             .unwrap_or("");
 
         if !content_type.contains("text/html") {
-            println!("Skipping non-HTML content: {}", current_url);
+            console_log(&format!("Skipping non-HTML content: {}", current_url));
             continue;
         }
 
         let body = match response.text().await {
             Ok(text) => text,
             Err(e) => {
-                eprintln!("Failed to read body from {}: {}", current_url, e);
+                console_log(&format!("Failed to read body from {}: {}", current_url, e));
                 continue;
             }
         };
@@ -81,19 +84,10 @@ pub async fn crawl_and_extract_glyphs(url: &str, depth: u8) -> Result<CrawlResul
         let page_glyphs = extract_glyphs_from_html(&body);
         let attr_glyphs = extract_glyphs_from_attributes(&body);
 
-        let page_glyph_count = page_glyphs.len();
-        let attr_glyph_count = attr_glyphs.len();
-
         result.glyphs.extend(page_glyphs);
         result.glyphs.extend(attr_glyphs);
         result.crawled_urls.insert(current_url.clone());
         result.pages_crawled += 1;
-
-        println!(
-            "  Found {} unique glyphs on this page (total: {})",
-            page_glyph_count + attr_glyph_count,
-            result.glyphs.len()
-        );
 
         if current_depth < depth {
             let document = Html::parse_document(&body);
@@ -112,12 +106,6 @@ pub async fn crawl_and_extract_glyphs(url: &str, depth: u8) -> Result<CrawlResul
             }
         }
     }
-
-    println!(
-        "\nCrawl complete! Visited {} pages, found {} unique glyphs",
-        result.pages_crawled,
-        result.glyphs.len()
-    );
 
     Ok(result)
 }

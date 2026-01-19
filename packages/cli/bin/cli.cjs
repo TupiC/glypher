@@ -54,6 +54,18 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 	}
 	exports.convert_font = convert_font;
 	/**
+	* WASM-compatible version that returns glyphs as a JSON string
+	* @param {string} url
+	* @param {number} depth
+	* @returns {Promise<string>}
+	*/
+	function crawl(url, depth) {
+		const ptr0 = passStringToWasm0(url, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+		const len0 = WASM_VECTOR_LEN;
+		return wasm.crawl(ptr0, len0, depth);
+	}
+	exports.crawl = crawl;
+	/**
 	* Expand multiple range names into a deduplicated array of Unicode code points
 	* Takes a JSON array of range names, returns a Uint32Array of code points
 	* @param {string} range_names_json
@@ -69,6 +81,55 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 		return v2;
 	}
 	exports.expand_ranges = expand_ranges;
+	/**
+	* Find best matching ranges for a set of glyphs
+	* Takes a string of glyphs, returns JSON array of RangeMatch objects
+	* @param {string} glyphs
+	* @returns {string}
+	*/
+	function find_best_matching_ranges_wasm(glyphs) {
+		let deferred2_0;
+		let deferred2_1;
+		try {
+			const ptr0 = passStringToWasm0(glyphs, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+			const len0 = WASM_VECTOR_LEN;
+			const ret = wasm.find_best_matching_ranges_wasm(ptr0, len0);
+			deferred2_0 = ret[0];
+			deferred2_1 = ret[1];
+			return getStringFromWasm0(ret[0], ret[1]);
+		} finally {
+			wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+		}
+	}
+	exports.find_best_matching_ranges_wasm = find_best_matching_ranges_wasm;
+	/**
+	* Format range matches for display
+	* Takes a JSON array of RangeMatch objects, returns formatted string
+	* @param {string} matches_json
+	* @returns {string}
+	*/
+	function format_range_matches_wasm(matches_json) {
+		let deferred3_0;
+		let deferred3_1;
+		try {
+			const ptr0 = passStringToWasm0(matches_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+			const len0 = WASM_VECTOR_LEN;
+			const ret = wasm.format_range_matches_wasm(ptr0, len0);
+			var ptr2 = ret[0];
+			var len2 = ret[1];
+			if (ret[3]) {
+				ptr2 = 0;
+				len2 = 0;
+				throw takeFromExternrefTable0(ret[2]);
+			}
+			deferred3_0 = ptr2;
+			deferred3_1 = len2;
+			return getStringFromWasm0(ptr2, len2);
+		} finally {
+			wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+		}
+	}
+	exports.format_range_matches_wasm = format_range_matches_wasm;
 	/**
 	* Get all available range names for CLI choices
 	* Returns a JSON array of range names
@@ -224,6 +285,9 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 			__wbg_isArray_d314bb98fcf08331: function(arg0) {
 				return Array.isArray(arg0);
 			},
+			__wbg_log_52c4ad396ea54a0d: function(arg0, arg1) {
+				console.log(getStringFromWasm0(arg0, arg1));
+			},
 			__wbg_new_361308b2356cecd0: function() {
 				return /* @__PURE__ */ new Object();
 			},
@@ -350,10 +414,10 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 				return arg0.value;
 			},
 			__wbindgen_cast_0000000000000001: function(arg0, arg1) {
-				return makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h08972669d3288663, wasm_bindgen__convert__closures_____invoke__hc612c92cdc2fa186);
+				return makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h31919163eec10550, wasm_bindgen__convert__closures_____invoke__hb1d6d81a3445c018);
 			},
 			__wbindgen_cast_0000000000000002: function(arg0, arg1) {
-				return makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h31919163eec10550, wasm_bindgen__convert__closures_____invoke__hb1d6d81a3445c018);
+				return makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h08972669d3288663, wasm_bindgen__convert__closures_____invoke__hc612c92cdc2fa186);
 			},
 			__wbindgen_cast_0000000000000003: function(arg0, arg1) {
 				return getStringFromWasm0(arg0, arg1);
@@ -655,40 +719,128 @@ function convert(inputPath, format, outputPath) {
 var version = "1.1.0";
 
 //#endregion
-//#region src/cli.ts
+//#region src/utils.ts
 function getAvailableRangeNames() {
 	return JSON.parse((0, import_glypher_wasm.get_available_range_names)());
 }
 function expandRanges(rangeNames) {
 	return Array.from((0, import_glypher_wasm.expand_ranges)(JSON.stringify(rangeNames)));
 }
-const program = new commander.Command();
-program.name("glypher").description("A font manipulation CLI tool").version(version).requiredOption("-i, --input <path>", "Input font file").option("-o, --output <path>", "Output font file").addOption(new commander.Option("-f, --format <format>", "Convert to format").choices(["woff2", "woff"])).option("-g, --glyphs <glyphs>", "Glyphs to subset (Unicode code points or glyph IDs)").addOption(new commander.Option("-r, --range <ranges...>", "Predefined character range(s) for subsetting").choices(getAvailableRangeNames())).action((opts) => {
-	const { input, output, format, glyphs, range } = opts;
-	if (!format && !glyphs && !range) {
-		console.error("Error: At least one of --format, --glyphs, or --range must be specified");
-		process.exit(1);
-	}
-	let effectiveGlyphs = glyphs;
-	if (range && range.length > 0) {
-		const rangeStr = expandRanges(range).map((cp) => `U+${cp.toString(16).toUpperCase().padStart(4, "0")}`).join(",");
-		effectiveGlyphs = glyphs ? `${glyphs},${rangeStr}` : rangeStr;
-	}
-	let outputPath = output;
-	if (!outputPath) if (format) outputPath = generateOutputPath(input, format);
-	else {
-		console.error("Error: --output is required when only subsetting");
-		process.exit(1);
-	}
-	if (effectiveGlyphs && format) {
+function findBestMatchingRanges(glyphs) {
+	return JSON.parse((0, import_glypher_wasm.find_best_matching_ranges_wasm)(glyphs));
+}
+function formatRangeMatches(matches) {
+	return (0, import_glypher_wasm.format_range_matches_wasm)(JSON.stringify(matches));
+}
+function glyphsToUnicodeFormat(glyphs) {
+	return [...glyphs].map((c) => {
+		return `U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`;
+	}).join(",");
+}
+function codePointsToUnicodeFormat(codePoints) {
+	return codePoints.map((cp) => `U+${cp.toString(16).toUpperCase().padStart(4, "0")}`).join(",");
+}
+function performSubsetAndConvert(input, outputPath, glyphs, format) {
+	if (format) {
 		const tempPath = path.default.join(os.default.tmpdir(), `glypher-temp-${Date.now()}${path.default.extname(input)}`);
 		try {
-			subset(input, tempPath, effectiveGlyphs);
+			subset(input, tempPath, glyphs);
 			convert(tempPath, format, outputPath);
 		} finally {
 			if (fs.default.existsSync(tempPath)) fs.default.unlinkSync(tempPath);
 		}
-	} else if (effectiveGlyphs) subset(input, outputPath, effectiveGlyphs);
+	} else subset(input, outputPath, glyphs);
+}
+function determineOutputPath(input, output, format, requireOutput = true) {
+	if (output) return output;
+	if (format) return generateOutputPath(input, format);
+	if (requireOutput) {
+		const ext = path.default.extname(input);
+		const base = path.default.basename(input, ext);
+		const dir = path.default.dirname(input);
+		return path.default.join(dir, `${base}-subset${ext}`);
+	}
+	console.error("Error: --output is required when only subsetting");
+	process.exit(1);
+}
+
+//#endregion
+//#region src/cli.ts
+const program = new commander.Command();
+program.name("glypher").description("A font manipulation CLI tool").version(version).enablePositionalOptions().option("-i, --input <path>", "Input font file").option("-o, --output <path>", "Output font file").addOption(new commander.Option("-f, --format <format>", "Convert to format").choices(["woff2", "woff"])).option("-g, --glyphs <glyphs>", "Glyphs to subset (Unicode code points or glyph IDs)").addOption(new commander.Option("-r, --range <ranges...>", "Predefined character range(s) for subsetting").choices(getAvailableRangeNames())).option("--crawl", "Crawl a website to extract glyphs for subsetting").option("-u, --url <url>", "URL to crawl (requires --crawl)").option("-d, --depth <depth>", "Crawl depth (0 = single page only)", "0").option("--use-range", "Use best matching range instead of exact glyphs (with --crawl)").action(async (opts) => {
+	const { input, output, format, glyphs, range, url, depth, useRange } = opts;
+	if (opts.crawl) {
+		if (!url) {
+			console.error("Error: --url is required when using --crawl");
+			process.exit(1);
+		}
+		const crawlDepth = parseInt(depth || "0", 10);
+		if (isNaN(crawlDepth) || crawlDepth < 0) {
+			console.error("Error: depth must be a non-negative integer");
+			process.exit(1);
+		}
+		console.log(`\nCrawling ${url} with depth ${crawlDepth}...\n`);
+		try {
+			const crawledGlyphs = await (0, import_glypher_wasm.crawl)(url, crawlDepth);
+			if (!crawledGlyphs || crawledGlyphs.length === 0) {
+				console.log("No glyphs found on the website.");
+				process.exit(0);
+			}
+			console.log(`\n=== Found ${crawledGlyphs.length} unique glyphs ===\n`);
+			const sampleSize = Math.min(100, crawledGlyphs.length);
+			console.log(`Sample (first ${sampleSize} chars): ${crawledGlyphs.slice(0, sampleSize)}`);
+			if (crawledGlyphs.length > sampleSize) console.log(`... and ${crawledGlyphs.length - sampleSize} more`);
+			const matches = findBestMatchingRanges(crawledGlyphs);
+			if (matches.length > 0) {
+				console.log("\n=== Best Matching Character Ranges ===\n");
+				console.log(formatRangeMatches(matches));
+				const bestMatch = matches[0];
+				console.log(`\nRecommendation: Use "${bestMatch.name}" range`);
+				console.log(`  - Covers ${bestMatch.range_coverage_percent.toFixed(1)}% of the range`);
+				console.log(`  - ${bestMatch.glyphs_in_range}/${bestMatch.total_range_size} characters used`);
+				if (bestMatch.glyphs_outside_range > 0) console.log(`  - ${bestMatch.glyphs_outside_range} glyphs fall outside this range`);
+				if (!useRange) console.log("\nTip: Use --use-range to subset using the best matching range");
+			}
+			if (input) {
+				if (!fs.default.existsSync(input)) {
+					console.error(`\nError: Input font file not found: ${input}`);
+					process.exit(1);
+				}
+				let effectiveGlyphs$1;
+				if (useRange && matches.length > 0) {
+					const bestRange = matches[0].name;
+					console.log(`\n=== Converting font using "${bestRange}" range ===\n`);
+					effectiveGlyphs$1 = codePointsToUnicodeFormat(expandRanges([bestRange]));
+				} else {
+					console.log("\n=== Converting font using exact glyphs found ===\n");
+					effectiveGlyphs$1 = glyphsToUnicodeFormat(crawledGlyphs);
+				}
+				const outputPath$1 = determineOutputPath(input, output, format, true);
+				performSubsetAndConvert(input, outputPath$1, effectiveGlyphs$1, format);
+				console.log(`Output written to: ${outputPath$1}`);
+			}
+		} catch (error) {
+			console.error("Error during crawl:", error);
+			process.exit(1);
+		}
+		return;
+	}
+	if (!input) {
+		console.error("Error: --input is required");
+		process.exit(1);
+	}
+	if (!format && !glyphs && !range) {
+		console.error("Error: At least one of -f, --format; -g --glyphs; -r --range or --crawl must be specified");
+		process.exit(1);
+	}
+	let effectiveGlyphs = glyphs;
+	if (range && range.length > 0) {
+		const rangeStr = codePointsToUnicodeFormat(expandRanges(range));
+		effectiveGlyphs = glyphs ? `${glyphs},${rangeStr}` : rangeStr;
+	}
+	const outputPath = determineOutputPath(input, output, format, !format);
+	if (effectiveGlyphs && format) performSubsetAndConvert(input, outputPath, effectiveGlyphs, format);
+	else if (effectiveGlyphs) subset(input, outputPath, effectiveGlyphs);
 	else if (format) convert(input, format, outputPath);
 	console.log(`Output written to: ${outputPath}`);
 });

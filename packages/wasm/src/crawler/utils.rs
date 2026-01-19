@@ -1,5 +1,17 @@
 use scraper::{Html, Selector};
 use std::collections::BTreeSet;
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
+}
+
+/// Log a message to the JavaScript console
+pub fn console_log(msg: &str) {
+    log(msg);
+}
 
 /// Extract all text content from HTML and return unique glyphs (characters)
 pub fn extract_glyphs_from_html(html: &str) -> BTreeSet<char> {

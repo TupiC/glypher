@@ -22,6 +22,6 @@
     },
     "include": [
         "src",
-        "tests/utils.test.ts"
+        "tests/commands/utils.test.ts"
     ]
 }

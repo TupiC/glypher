@@ -282,3 +282,21 @@ pub fn expand_ranges(range_names_json: &str) -> Result<Vec<u32>, String> {
 
     Ok(code_point_set.into_iter().collect())
 }
+
+/// Find best matching ranges for a set of glyphs
+/// Takes a string of glyphs, returns JSON array of RangeMatch objects
+#[wasm_bindgen]
+pub fn find_best_matching_ranges_wasm(glyphs: &str) -> String {
+    let glyph_set: BTreeSet<char> = glyphs.chars().collect();
+    let matches = find_best_matching_ranges(&glyph_set);
+    serde_json::to_string(&matches).unwrap_or_else(|_| "[]".to_string())
+}
+
+/// Format range matches for display
+/// Takes a JSON array of RangeMatch objects, returns formatted string
+#[wasm_bindgen]
+pub fn format_range_matches_wasm(matches_json: &str) -> Result<String, String> {
+    let matches: Vec<RangeMatch> = serde_json::from_str(matches_json)
+        .map_err(|e| format!("Failed to parse matches: {}", e))?;
+    Ok(format_range_matches(&matches))
+}
