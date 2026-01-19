@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/TupiC/glypher/compare/v1.1.0...v1.2.0) (2026-01-19)
+
+
+### Features
+
+* extract glyphs from website ([ce4e6ec](https://github.com/TupiC/glypher/commit/ce4e6ece4c99a4c33f892cc32f570c95ede2b80e))
+
 # [1.1.0](https://github.com/TupiC/glypher/compare/v1.0.3...v1.1.0) (2026-01-16)
 
 
