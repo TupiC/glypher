@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/TupiC/glypher/compare/v1.2.0...v1.2.1) (2026-01-19)
+
+
+### Performance Improvements
+
+* **wasm:** decrease bundle size ([e6838a2](https://github.com/TupiC/glypher/commit/e6838a24a62be74bb773ae1efd95db5ed7ceaf42))
+
 # [1.2.0](https://github.com/TupiC/glypher/compare/v1.1.0...v1.2.0) (2026-01-19)
 
 
