@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/TupiC/glypher/compare/v1.2.1...v1.2.2) (2026-01-20)
+
+
+### Bug Fixes
+
+* properly allow subsetting by text ([b945881](https://github.com/TupiC/glypher/commit/b94588120e9ac71e8c85cad20990c630e453ff97))
+
 ## [1.2.1](https://github.com/TupiC/glypher/compare/v1.2.0...v1.2.1) (2026-01-19)
 
 
