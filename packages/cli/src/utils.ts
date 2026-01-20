@@ -10,6 +10,7 @@ import {
 import fs from "fs";
 import path from "path";
 import os from "os";
+import type { RangeMatch } from './types/range.types';
 
 export function getAvailableRangeNames(): string[] {
     return JSON.parse(get_available_range_names());
@@ -17,14 +18,6 @@ export function getAvailableRangeNames(): string[] {
 
 export function expandRanges(rangeNames: string[]): number[] {
     return Array.from(expand_ranges(JSON.stringify(rangeNames)));
-}
-
-interface RangeMatch {
-    name: string;
-    range_coverage_percent: number;
-    glyphs_in_range: number;
-    total_range_size: number;
-    glyphs_outside_range: number;
 }
 
 export function findBestMatchingRanges(glyphs: string): RangeMatch[] {

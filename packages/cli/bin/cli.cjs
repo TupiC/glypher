@@ -716,7 +716,7 @@ function convert(inputPath, format, outputPath) {
 
 //#endregion
 //#region package.json
-var version = "1.2.0";
+var version = "1.2.1";
 
 //#endregion
 //#region src/utils.ts
