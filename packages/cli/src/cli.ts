@@ -32,6 +32,10 @@ program
         "-g, --glyphs <glyphs>",
         "Glyphs to subset (Unicode code points or glyph IDs)"
     )
+    .option(
+        "-t, --text <text>",
+        "Text characters to subset (e.g., -t \"abc\" keeps only a, b, c)"
+    )
     .addOption(
         new Option(
             "-r, --range <ranges...>",
@@ -51,13 +55,14 @@ program
             output?: string;
             format?: ConvertFormat;
             glyphs?: string;
+            text?: string;
             range?: string[];
             crawl?: boolean;
             url?: string;
             depth?: string;
             useRange?: boolean;
         }) => {
-            const { input, output, format, glyphs, range, url, depth, useRange } = opts;
+            const { input, output, format, glyphs, text, range, url, depth, useRange } = opts;
 
             // Handle crawl mode
             if (opts.crawl) {
@@ -144,18 +149,26 @@ program
                 process.exit(1);
             }
 
-            if (!format && !glyphs && !range) {
+            if (!format && !glyphs && !text && !range) {
                 console.error(
-                    "Error: At least one of -f, --format; -g --glyphs; -r --range or --crawl must be specified"
+                    "Error: At least one of -f, --format; -g --glyphs; -t --text; -r --range or --crawl must be specified"
                 );
                 process.exit(1);
             }
 
-            // Expand ranges to Unicode code points if specified
+            // Build effective glyphs from all sources
             let effectiveGlyphs = glyphs;
+            
+            // Convert text to Unicode format and combine
+            if (text) {
+                const textUnicode = glyphsToUnicodeFormat(text);
+                effectiveGlyphs = effectiveGlyphs ? `${effectiveGlyphs},${textUnicode}` : textUnicode;
+            }
+            
+            // Expand ranges to Unicode code points if specified
             if (range && range.length > 0) {
                 const rangeStr = codePointsToUnicodeFormat(expandRanges(range));
-                effectiveGlyphs = glyphs ? `${glyphs},${rangeStr}` : rangeStr;
+                effectiveGlyphs = effectiveGlyphs ? `${effectiveGlyphs},${rangeStr}` : rangeStr;
             }
 
             // Determine output path

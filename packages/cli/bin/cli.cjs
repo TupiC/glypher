@@ -767,8 +767,8 @@ function determineOutputPath(input, output, format, requireOutput = true) {
 //#endregion
 //#region src/cli.ts
 const program = new commander.Command();
-program.name("glypher").description("A font manipulation CLI tool").version(version).enablePositionalOptions().option("-i, --input <path>", "Input font file").option("-o, --output <path>", "Output font file").addOption(new commander.Option("-f, --format <format>", "Convert to format").choices(["woff2", "woff"])).option("-g, --glyphs <glyphs>", "Glyphs to subset (Unicode code points or glyph IDs)").addOption(new commander.Option("-r, --range <ranges...>", "Predefined character range(s) for subsetting").choices(getAvailableRangeNames())).option("--crawl", "Crawl a website to extract glyphs for subsetting").option("-u, --url <url>", "URL to crawl (requires --crawl)").option("-d, --depth <depth>", "Crawl depth (0 = single page only)", "0").option("--use-range", "Use best matching range instead of exact glyphs (with --crawl)").action(async (opts) => {
-	const { input, output, format, glyphs, range, url, depth, useRange } = opts;
+program.name("glypher").description("A font manipulation CLI tool").version(version).enablePositionalOptions().option("-i, --input <path>", "Input font file").option("-o, --output <path>", "Output font file").addOption(new commander.Option("-f, --format <format>", "Convert to format").choices(["woff2", "woff"])).option("-g, --glyphs <glyphs>", "Glyphs to subset (Unicode code points or glyph IDs)").option("-t, --text <text>", "Text characters to subset (e.g., -t \"abc\" keeps only a, b, c)").addOption(new commander.Option("-r, --range <ranges...>", "Predefined character range(s) for subsetting").choices(getAvailableRangeNames())).option("--crawl", "Crawl a website to extract glyphs for subsetting").option("-u, --url <url>", "URL to crawl (requires --crawl)").option("-d, --depth <depth>", "Crawl depth (0 = single page only)", "0").option("--use-range", "Use best matching range instead of exact glyphs (with --crawl)").action(async (opts) => {
+	const { input, output, format, glyphs, text, range, url, depth, useRange } = opts;
 	if (opts.crawl) {
 		if (!url) {
 			console.error("Error: --url is required when using --crawl");
@@ -829,14 +829,18 @@ program.name("glypher").description("A font manipulation CLI tool").version(vers
 		console.error("Error: --input is required");
 		process.exit(1);
 	}
-	if (!format && !glyphs && !range) {
-		console.error("Error: At least one of -f, --format; -g --glyphs; -r --range or --crawl must be specified");
+	if (!format && !glyphs && !text && !range) {
+		console.error("Error: At least one of -f, --format; -g --glyphs; -t --text; -r --range or --crawl must be specified");
 		process.exit(1);
 	}
 	let effectiveGlyphs = glyphs;
+	if (text) {
+		const textUnicode = glyphsToUnicodeFormat(text);
+		effectiveGlyphs = effectiveGlyphs ? `${effectiveGlyphs},${textUnicode}` : textUnicode;
+	}
 	if (range && range.length > 0) {
 		const rangeStr = codePointsToUnicodeFormat(expandRanges(range));
-		effectiveGlyphs = glyphs ? `${glyphs},${rangeStr}` : rangeStr;
+		effectiveGlyphs = effectiveGlyphs ? `${effectiveGlyphs},${rangeStr}` : rangeStr;
 	}
 	const outputPath = determineOutputPath(input, output, format, !format);
 	if (effectiveGlyphs && format) performSubsetAndConvert(input, outputPath, effectiveGlyphs, format);
