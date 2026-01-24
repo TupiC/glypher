@@ -1,4 +1,4 @@
-use crate::utils::validate_ttf;
+use crate::utils::decompress_font;
 use fontcull_klippa::{Plan, SubsetFlags, subset_font as klippa_subset};
 use fontcull_write_fonts::{
     read::{FontRef, collections::int_set::IntSet},
@@ -10,16 +10,14 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn subset_font(data: &[u8], glyphs: Vec<u16>) -> Vec<u8> {
-    if validate_ttf(data).is_err() {
-        return data.to_vec();
-    }
+    let data = decompress_font(data);
 
-    let font_ref = match FontRef::new(data) {
+    let font_ref = match FontRef::new(&data) {
         Ok(font) => font,
         Err(_) => return data.to_vec(),
     };
 
-    let face = match Face::parse(data, 0) {
+    let face = match Face::parse(&data, 0) {
         Ok(face) => face,
         Err(_) => return data.to_vec(),
     };
@@ -76,16 +74,14 @@ pub fn subset_font(data: &[u8], glyphs: Vec<u16>) -> Vec<u8> {
 
 #[wasm_bindgen]
 pub fn subset_font_by_unicodes(data: &[u8], unicodes: Vec<u32>) -> Vec<u8> {
-    if validate_ttf(data).is_err() {
-        return data.to_vec();
-    }
+    let data = decompress_font(data);
 
-    let font_ref = match FontRef::new(data) {
+    let font_ref = match FontRef::new(&data) {
         Ok(font) => font,
         Err(_) => return data.to_vec(),
     };
 
-    let face = match Face::parse(data, 0) {
+    let face = match Face::parse(&data, 0) {
         Ok(face) => face,
         Err(_) => return data.to_vec(),
     };

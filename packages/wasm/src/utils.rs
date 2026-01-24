@@ -1,5 +1,6 @@
 use ttf_parser::Face;
 use wasm_bindgen::prelude::*;
+use wuff::{decompress_woff1, decompress_woff2};
 
 /// Validate that the input data is a valid TTF/OTF font
 pub fn validate_ttf(data: &[u8]) -> Result<(), String> {
@@ -60,4 +61,45 @@ pub fn is_hex_regex(s: &str) -> bool {
 
 pub fn has_letters_regex(s: &str) -> bool {
     !s.is_empty() && s.as_bytes().iter().any(|&b| (b'A'..=b'F').contains(&b))
+}
+
+#[derive(Debug, PartialEq)]
+pub enum FontFormat {
+    Woff2,
+    Woff,
+    Ttf,
+    Unknown,
+}
+
+pub fn get_font_format(data: &[u8]) -> FontFormat {
+    if is_woff2(data) {
+        FontFormat::Woff2
+    } else if is_woff(data) {
+        FontFormat::Woff
+    } else if is_ttf(data) {
+        FontFormat::Ttf
+    } else {
+        FontFormat::Unknown
+    }
+}
+
+pub fn decompress_font(data: &[u8]) -> Vec<u8> {
+    let font_format = get_font_format(data);
+    match font_format {
+        FontFormat::Woff2 => decompress_woff2(data).unwrap().to_vec(),
+        FontFormat::Woff => decompress_woff1(data).unwrap().to_vec(),
+        _ => data.to_vec(),
+    }
+}
+
+fn is_woff2(data: &[u8]) -> bool {
+    data.starts_with(&[0x77, 0x4F, 0x46, 0x32])
+}
+
+fn is_woff(data: &[u8]) -> bool {
+    data.starts_with(&[0x77, 0x4F, 0x46, 0x46])
+}
+
+fn is_ttf(data: &[u8]) -> bool {
+    data.starts_with(&[0x00, 0x01, 0x00, 0x00])
 }

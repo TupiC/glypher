@@ -16,6 +16,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 scraper = "0.25.0"
 reqwest = "0.13.1"
+wuff = "0.2.3"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

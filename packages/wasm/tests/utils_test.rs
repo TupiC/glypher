@@ -113,3 +113,16 @@ fn test_has_letters_regex() {
     assert!(!has_letters_regex(""));
     assert!(!has_letters_regex("abc"));
 }
+
+#[test]
+fn test_get_font_format() {
+    let woff2_data = vec![0x77, 0x4F, 0x46, 0x32];
+    let woff_data = vec![0x77, 0x4F, 0x46, 0x46];
+    let ttf_data = vec![0x00, 0x01, 0x00, 0x00];
+    let unknown_data = vec![0x12, 0x34, 0x56, 0x78];
+
+    assert_eq!(get_font_format(&woff2_data), FontFormat::Woff2);
+    assert_eq!(get_font_format(&woff_data), FontFormat::Woff);
+    assert_eq!(get_font_format(&ttf_data), FontFormat::Ttf);
+    assert_eq!(get_font_format(&unknown_data), FontFormat::Unknown);
+}
