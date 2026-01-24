@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/TupiC/glypher/compare/v1.2.2...v1.2.3) (2026-01-24)
+
+
+### Bug Fixes
+
+* allow subsetting already converted woff/woff2 fonts ([37296af](https://github.com/TupiC/glypher/commit/37296afe1ff7be497a416bd0dc210363817245d1))
+
 ## [1.2.2](https://github.com/TupiC/glypher/compare/v1.2.1...v1.2.2) (2026-01-20)
 
 

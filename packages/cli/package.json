@@ -1,6 +1,6 @@
 {
     "name": "glypher",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "description": "Fast and efficient font manipulation tool",
     "main": "./bin/cli.cjs",
     "bin": {
