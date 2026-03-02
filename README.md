@@ -13,6 +13,7 @@ The `glypher` CLI provides a TypeScript interface that wraps the core WebAssembl
 ## Features
 
 -   Subset fonts to include only specific glyphs
+-   Slice variable font axes (restrict weight, width, italic, etc.)
 -   Convert fonts to different formats (WOFF, WOFF2)
 -   Crawl websites to extract glyphs
     - Limitation: CSR, SSR websites not fully supported since content might be added after page load
@@ -49,6 +50,7 @@ npx glypher -i <input> [-o <output>] [-f <format>] [-g <glyphs>] [-r <ranges...>
 | `--input <path>` | `-i` | Input font file | Yes (except with `--crawl` only) |
 | `--output <path>` | `-o` | Output font file | When subsetting without format |
 | `--format <format>` | `-f` | Convert to format: `woff` or `woff2` | No |
+| `--axis <spec>` | `-a` | Slice variable font axes (Google Fonts-like format) | No |
 | `--glyphs <glyphs>` | `-g` | Glyphs to subset (Unicode code points or glyph IDs) | No |
 | `--range <ranges...>` | `-r` | Predefined character range(s) for subsetting | No |
 | `--crawl` | | Crawl a website to extract glyphs | No |
@@ -56,9 +58,34 @@ npx glypher -i <input> [-o <output>] [-f <format>] [-g <glyphs>] [-r <ranges...>
 | `--depth <depth>` | `-d` | Crawl depth (0 = single page only, default: 0) | No |
 | `--use-range` | | Use best matching range instead of exact glyphs (with `--crawl`) | No |
 
-**Note:** At least one of `--format`, `--glyphs`, `--range`, or `--crawl` must be specified.
+**Note:** At least one of `--format`, `--glyphs`, `--range`, `--axis`, or `--crawl` must be specified.
 
 ## Examples
+
+### Variable Font Axis Slicing
+
+Slice variable fonts to reduce file size by restricting axis ranges. Uses a Google Fonts-like format: `axis1,axis2,axis3@valueCombinations`.
+
+**Format:** `axisNames@combinations` where combinations are semicolon-separated, each with comma-separated values per axis. Supports:
+- Single value: `400`
+- Range: `400-900`
+- Discrete values: `400,700` (uses min-max range)
+
+**Example – restrict weight and width:**
+
+```bash
+# Single combination: ital=0, wght=400-900, wdth=100
+npx glypher -i NotoSans-VF.woff2 -a "ital,wght,wdth@0,400-900,100" -f woff2 -o output.woff2
+
+# Multiple combinations (outputs multiple files: output-0.woff2, output-1.woff2)
+npx glypher -i NotoSans-VF.woff2 -a "ital,wght,wdth@0,400-900,100;0,400-900,75;1,400,700,100" -f woff2 -o output.woff2
+```
+
+**Combine with subsetting:**
+
+```bash
+npx glypher -i NotoSans-VF.woff2 -a "ital,wght@0,400-700;1,400-700" -r LATIN -f woff2 -o output.woff2
+```
 
 ### Convert Only
 

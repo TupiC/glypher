@@ -715,8 +715,131 @@ function convert(inputPath, format, outputPath) {
 }
 
 //#endregion
+//#region src/commands/axis-slice.ts
+/**
+* Slice variable font axes using fonttools. Uses @web-alchemy/fonttools
+* (Pyodide-based fonttools) for variable font instancing.
+* Returns paths to the sliced font file(s).
+*/
+async function axisSlice(inputPath, combinations, outputPath) {
+	const { instantiateVariableFont } = await import("@web-alchemy/fonttools");
+	const data = fs.default.readFileSync(inputPath);
+	const outputPaths = [];
+	const outExt = "ttf";
+	const outDir = path.default.dirname(outputPath);
+	const outBase = path.default.basename(outputPath, path.default.extname(outputPath));
+	for (let i = 0; i < combinations.length; i++) {
+		const limits = combinations[i];
+		const axisLimits = {};
+		for (const [tag, value] of Object.entries(limits)) if (value === null) axisLimits[tag] = null;
+		else if (typeof value === "number") axisLimits[tag] = value;
+		else axisLimits[tag] = value;
+		let slicedBuffer;
+		try {
+			slicedBuffer = Buffer.from(await instantiateVariableFont(new Uint8Array(data), axisLimits));
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			throw new Error(`Axis slicing failed (not a variable font?): ${msg}`);
+		}
+		const outPath = combinations.length > 1 ? path.default.join(outDir, `${outBase}-${i}.${outExt}`) : outputPath;
+		fs.default.writeFileSync(outPath, slicedBuffer);
+		outputPaths.push(outPath);
+	}
+	return outputPaths;
+}
+
+//#endregion
+//#region src/axis/parse.ts
+/**
+* Parse a single value token - can be "400", "400-900", or part of "400,700"
+*/
+function parseValueToken(token) {
+	const num = parseFloat(token.trim());
+	return isNaN(num) ? null : num;
+}
+/**
+* Parse a value spec - returns single value, range [min,max], or null for drop
+*/
+function parseValueSpec(tokens, startIdx, count) {
+	if (count === 0) return null;
+	if (count === 1) {
+		const token = tokens[startIdx];
+		if (token?.toLowerCase() === "drop") return null;
+		const rangeMatch = token?.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
+		if (rangeMatch) return {
+			min: parseFloat(rangeMatch[1]),
+			max: parseFloat(rangeMatch[2])
+		};
+		const num = parseValueToken(token ?? "");
+		return num !== null ? num : null;
+	}
+	const values = [];
+	for (let i = 0; i < count; i++) {
+		const num = parseValueToken(tokens[startIdx + i] ?? "");
+		if (num !== null) values.push(num);
+	}
+	if (values.length === 0) return null;
+	if (values.length === 1) return values[0];
+	return {
+		min: Math.min(...values),
+		max: Math.max(...values)
+	};
+}
+/**
+* Parse the --axis parameter format (Google Fonts-like):
+* ital,wght,wdth@0,400-900,100;0,400-900,75;1,400,700,100
+*
+* - Axis names: comma-separated before @
+* - Combinations: semicolon-separated, each is comma-separated values
+* - Values: single (400), range (400-900), or discrete (400,700)
+* - When value count > axis count, extra values form discrete set for the middle axis
+*/
+function parseAxisSpec(spec) {
+	const atIdx = spec.indexOf("@");
+	if (atIdx < 0) return null;
+	const axisPart = spec.slice(0, atIdx).trim();
+	const combosPart = spec.slice(atIdx + 1).trim();
+	const axisNames = axisPart.split(",").map((a) => a.trim().toLowerCase());
+	if (axisNames.length === 0 || axisNames.some((a) => !a)) return null;
+	const combos = [];
+	const comboStrings = combosPart.split(";").map((s) => s.trim());
+	for (const comboStr of comboStrings) {
+		if (!comboStr) continue;
+		const tokens = comboStr.split(",").map((s) => s.trim());
+		const nAxes = axisNames.length;
+		const nValues = tokens.length;
+		if (nValues < nAxes) continue;
+		const limits = {};
+		let tokenIdx = 0;
+		if (nValues === nAxes) for (let i = 0; i < nAxes; i++) {
+			const val = parseValueSpec(tokens, tokenIdx, 1);
+			if (val === null) limits[axisNames[i]] = null;
+			else if (typeof val === "number") limits[axisNames[i]] = val;
+			else limits[axisNames[i]] = [val.min, val.max];
+			tokenIdx++;
+		}
+		else {
+			const extraCount = nValues - nAxes;
+			for (let i = 0; i < nAxes; i++) {
+				const count = i === nAxes - 2 ? 1 + extraCount : 1;
+				const val = parseValueSpec(tokens, tokenIdx, count);
+				if (val === null) limits[axisNames[i]] = null;
+				else if (typeof val === "number") limits[axisNames[i]] = val;
+				else limits[axisNames[i]] = [val.min, val.max];
+				tokenIdx += count;
+			}
+		}
+		combos.push(limits);
+	}
+	return combos.length > 0 ? {
+		axisNames,
+		combinations: combos
+	} : null;
+}
+
+//#endregion
 //#region package.json
-var version = "1.2.1";
+var version = "1.2.3";
 
 //#endregion
 //#region src/utils.ts
@@ -767,8 +890,8 @@ function determineOutputPath(input, output, format, requireOutput = true) {
 //#endregion
 //#region src/cli.ts
 const program = new commander.Command();
-program.name("glypher").description("A font manipulation CLI tool").version(version).enablePositionalOptions().option("-i, --input <path>", "Input font file").option("-o, --output <path>", "Output font file").addOption(new commander.Option("-f, --format <format>", "Convert to format").choices(["woff2", "woff"])).option("-g, --glyphs <glyphs>", "Glyphs to subset (Unicode code points or glyph IDs)").option("-t, --text <text>", "Text characters to subset (e.g., -t \"abc\" keeps only a, b, c)").addOption(new commander.Option("-r, --range <ranges...>", "Predefined character range(s) for subsetting").choices(getAvailableRangeNames())).option("--crawl", "Crawl a website to extract glyphs for subsetting").option("-u, --url <url>", "URL to crawl (requires --crawl)").option("-d, --depth <depth>", "Crawl depth (0 = single page only)", "0").option("--use-range", "Use best matching range instead of exact glyphs (with --crawl)").action(async (opts) => {
-	const { input, output, format, glyphs, text, range, url, depth, useRange } = opts;
+program.name("glypher").description("A font manipulation CLI tool").version(version).enablePositionalOptions().option("-i, --input <path>", "Input font file").option("-o, --output <path>", "Output font file").addOption(new commander.Option("-f, --format <format>", "Convert to format").choices(["woff2", "woff"])).option("-a, --axis <spec>", "Slice variable font axes (e.g. ital,wght,wdth@0,400-900,100;0,400-900,75)").option("-g, --glyphs <glyphs>", "Glyphs to subset (Unicode code points or glyph IDs)").option("-t, --text <text>", "Text characters to subset (e.g., -t \"abc\" keeps only a, b, c)").addOption(new commander.Option("-r, --range <ranges...>", "Predefined character range(s) for subsetting").choices(getAvailableRangeNames())).option("--crawl", "Crawl a website to extract glyphs for subsetting").option("-u, --url <url>", "URL to crawl (requires --crawl)").option("-d, --depth <depth>", "Crawl depth (0 = single page only)", "0").option("--use-range", "Use best matching range instead of exact glyphs (with --crawl)").action(async (opts) => {
+	const { input, output, format, axis, glyphs, text, range, url, depth, useRange } = opts;
 	if (opts.crawl) {
 		if (!url) {
 			console.error("Error: --url is required when using --crawl");
@@ -829,8 +952,8 @@ program.name("glypher").description("A font manipulation CLI tool").version(vers
 		console.error("Error: --input is required");
 		process.exit(1);
 	}
-	if (!format && !glyphs && !text && !range) {
-		console.error("Error: At least one of -f, --format; -g --glyphs; -t --text; -r --range or --crawl must be specified");
+	if (!format && !glyphs && !text && !range && !axis) {
+		console.error("Error: At least one of -f, --format; -g --glyphs; -t --text; -r --range; -a --axis or --crawl must be specified");
 		process.exit(1);
 	}
 	let effectiveGlyphs = glyphs;
@@ -841,6 +964,48 @@ program.name("glypher").description("A font manipulation CLI tool").version(vers
 	if (range && range.length > 0) {
 		const rangeStr = codePointsToUnicodeFormat(expandRanges(range));
 		effectiveGlyphs = effectiveGlyphs ? `${effectiveGlyphs},${rangeStr}` : rangeStr;
+	}
+	if (axis) {
+		const parsed = parseAxisSpec(axis);
+		if (!parsed) {
+			console.error("Error: Invalid --axis format. Use: axis1,axis2@val1,val2;val1,val2 (e.g. ital,wght,wdth@0,400-900,100)");
+			process.exit(1);
+		}
+		const ext = path.default.extname(input);
+		const base = path.default.basename(input, ext);
+		const dir = path.default.dirname(input);
+		const defaultOutput = path.default.join(dir, `${base}-sliced${format ? `.${format}` : ext}`);
+		const outputPath$1 = output ?? defaultOutput;
+		try {
+			const slicedPaths = await axisSlice(input, parsed.combinations, outputPath$1);
+			const finalPaths = [];
+			for (const slicedPath of slicedPaths) {
+				const baseNoExt = path.default.basename(slicedPath, path.default.extname(slicedPath));
+				const outDir = path.default.dirname(slicedPath);
+				const finalPath = format ? path.default.join(outDir, `${baseNoExt}.${format}`) : slicedPath;
+				if (effectiveGlyphs && format) {
+					performSubsetAndConvert(slicedPath, finalPath, effectiveGlyphs, format);
+					fs.default.unlinkSync(slicedPath);
+					finalPaths.push(finalPath);
+				} else if (effectiveGlyphs) {
+					subset(slicedPath, slicedPath, effectiveGlyphs);
+					if (format) {
+						convert(slicedPath, format, finalPath);
+						fs.default.unlinkSync(slicedPath);
+						finalPaths.push(finalPath);
+					} else finalPaths.push(slicedPath);
+				} else if (format) {
+					convert(slicedPath, format, finalPath);
+					fs.default.unlinkSync(slicedPath);
+					finalPaths.push(finalPath);
+				} else finalPaths.push(slicedPath);
+			}
+			console.log(`Output written to: ${finalPaths.join(", ")}`);
+		} catch (err) {
+			console.error("Error during axis slicing:", err);
+			process.exit(1);
+		}
+		return;
 	}
 	const outputPath = determineOutputPath(input, output, format, !format);
 	if (effectiveGlyphs && format) performSubsetAndConvert(input, outputPath, effectiveGlyphs, format);
