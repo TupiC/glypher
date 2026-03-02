@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { get_variable_font_axes } from "../wasm/glypher_wasm";
 import type { AxisLimits } from "../axis/parse";
 
 /**
@@ -15,6 +16,12 @@ export async function axisSlice(
     const { instantiateVariableFont } = await import("@web-alchemy/fonttools");
     const data = fs.readFileSync(inputPath);
 
+    // Get font's actual axes - only pass limits for axes that exist
+    const fontAxes: string[] = JSON.parse(
+        get_variable_font_axes(new Uint8Array(data))
+    );
+    const fontAxisSet = new Set(fontAxes.map((a) => a.toLowerCase()));
+
     const outputPaths: string[] = [];
     // Sliced output is TTF from fonttools; use .ttf for intermediate
     const outExt = "ttf";
@@ -24,9 +31,10 @@ export async function axisSlice(
     for (let i = 0; i < combinations.length; i++) {
         const limits = combinations[i];
 
-        // Convert to fonttools format: number | [min, max] | null
+        // Convert to fonttools format, filtering to only axes present in the font
         const axisLimits: Record<string, number | [number, number] | null> = {};
         for (const [tag, value] of Object.entries(limits)) {
+            if (!fontAxisSet.has(tag.toLowerCase())) continue;
             if (value === null) {
                 axisLimits[tag] = null;
             } else if (typeof value === "number") {

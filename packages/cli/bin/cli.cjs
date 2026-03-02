@@ -149,6 +149,27 @@ var require_glypher_wasm = /* @__PURE__ */ __commonJSMin(((exports) => {
 	}
 	exports.get_available_range_names = get_available_range_names;
 	/**
+	* Get variable font axis tags. Returns JSON array of axis names (e.g. ["wdth","wght"]).
+	* Returns empty array for non-variable fonts.
+	* @param {Uint8Array} data
+	* @returns {string}
+	*/
+	function get_variable_font_axes(data) {
+		let deferred2_0;
+		let deferred2_1;
+		try {
+			const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+			const len0 = WASM_VECTOR_LEN;
+			const ret = wasm.get_variable_font_axes(ptr0, len0);
+			deferred2_0 = ret[0];
+			deferred2_1 = ret[1];
+			return getStringFromWasm0(ret[0], ret[1]);
+		} finally {
+			wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+		}
+	}
+	exports.get_variable_font_axes = get_variable_font_axes;
+	/**
 	* Parse a Unicode string in various formats:
 	* - U+0041
 	* - 0x0041
@@ -724,6 +745,8 @@ function convert(inputPath, format, outputPath) {
 async function axisSlice(inputPath, combinations, outputPath) {
 	const { instantiateVariableFont } = await import("@web-alchemy/fonttools");
 	const data = fs.default.readFileSync(inputPath);
+	const fontAxes = JSON.parse((0, import_glypher_wasm.get_variable_font_axes)(new Uint8Array(data)));
+	const fontAxisSet = new Set(fontAxes.map((a) => a.toLowerCase()));
 	const outputPaths = [];
 	const outExt = "ttf";
 	const outDir = path.default.dirname(outputPath);
@@ -731,9 +754,12 @@ async function axisSlice(inputPath, combinations, outputPath) {
 	for (let i = 0; i < combinations.length; i++) {
 		const limits = combinations[i];
 		const axisLimits = {};
-		for (const [tag, value] of Object.entries(limits)) if (value === null) axisLimits[tag] = null;
-		else if (typeof value === "number") axisLimits[tag] = value;
-		else axisLimits[tag] = value;
+		for (const [tag, value] of Object.entries(limits)) {
+			if (!fontAxisSet.has(tag.toLowerCase())) continue;
+			if (value === null) axisLimits[tag] = null;
+			else if (typeof value === "number") axisLimits[tag] = value;
+			else axisLimits[tag] = value;
+		}
 		let slicedBuffer;
 		try {
 			slicedBuffer = Buffer.from(await instantiateVariableFont(new Uint8Array(data), axisLimits));
