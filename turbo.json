@@ -2,13 +2,19 @@
     "$schema": "https://turborepo.dev/schema.json",
     "tasks": {
         "glypher#build": {
-            "dependsOn": ["glypher/wasm#build"]
+            "dependsOn": [
+                "@glypher/wasm#build"
+            ]
         },
-        "glypher/wasm#build": {
-            "dependsOn": ["^build"]
+        "@glypher/wasm#build": {
+            "dependsOn": [
+                "^build"
+            ]
         },
         "test": {
-            "dependsOn": ["^test"]
+            "dependsOn": [
+                "^test"
+            ]
         }
     }
 }

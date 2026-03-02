@@ -1,5 +1,5 @@
 {
-    "name": "glypher/wasm",
+    "name": "@glypher/wasm",
     "version": "1.0.0",
     "scripts": {
         "build": "wasm-pack build --release --target nodejs --out-dir ../cli/src/wasm",

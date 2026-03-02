@@ -18,6 +18,9 @@ lerna-debug.log*
 *.wasm
 *.wasm.map
 
+# pnpm creates this symlink when package "glypher/wasm" is interpreted as subpath of "glypher"
+packages/cli/wasm
+
 # IDE
 .vscode/
 .idea/
