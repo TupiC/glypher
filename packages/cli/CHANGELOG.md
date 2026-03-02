@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/TupiC/glypher/compare/v1.2.3...v1.2.4) (2026-03-02)
+
+
+### Bug Fixes
+
+* **cli:** add --axis option for variable font axis slicing ([#9](https://github.com/TupiC/glypher/issues/9)) ([4ea1ef5](https://github.com/TupiC/glypher/commit/4ea1ef561bff2b0eead897adb26d9e4e11e9f7cc))
+
 ## [1.2.3](https://github.com/TupiC/glypher/compare/v1.2.2...v1.2.3) (2026-01-24)
 
 
