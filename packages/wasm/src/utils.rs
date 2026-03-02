@@ -1,3 +1,4 @@
+use serde_json::json;
 use ttf_parser::Face;
 use wasm_bindgen::prelude::*;
 use wuff::{decompress_woff1, decompress_woff2};
@@ -102,4 +103,24 @@ fn is_woff(data: &[u8]) -> bool {
 
 fn is_ttf(data: &[u8]) -> bool {
     data.starts_with(&[0x00, 0x01, 0x00, 0x00])
+}
+
+/// Get variable font axis tags. Returns JSON array of axis names (e.g. ["wdth","wght"]).
+/// Returns empty array for non-variable fonts.
+#[wasm_bindgen]
+pub fn get_variable_font_axes(data: &[u8]) -> String {
+    let data = decompress_font(data);
+    let face = match Face::parse(&data, 0) {
+        Ok(f) => f,
+        Err(_) => return json!([]).to_string(),
+    };
+    if !face.is_variable() {
+        return json!([]).to_string();
+    }
+    let axes: Vec<String> = face
+        .variation_axes()
+        .into_iter()
+        .map(|axis| axis.tag.to_string())
+        .collect();
+    json!(axes).to_string()
 }
