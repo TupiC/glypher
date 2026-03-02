@@ -1,10 +1,3 @@
-## [1.2.3](https://github.com/TupiC/glypher/compare/v1.2.2...v1.2.3) (2026-03-02)
-
-
-### Features
-
-* **axis slicing:** add `--axis` option for variable font axis slicing (Google Fonts-like format: `ital,wght,wdth@0,400-900,100;0,400-900,75`)
-
 ## [1.2.2](https://github.com/TupiC/glypher/compare/v1.2.1...v1.2.2) (2026-01-20)
 
 
