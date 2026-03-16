@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/TupiC/glypher/compare/v1.2.4...v1.2.5) (2026-03-16)
+
+
+### Bug Fixes
+
+* **axis-slice:** keep output file when slicing a single axis combination ([#10](https://github.com/TupiC/glypher/issues/10)) ([ea1bb6d](https://github.com/TupiC/glypher/commit/ea1bb6d7fe16c3ef1c8ecd0a7e424ab82e256cb4))
+
 ## [1.2.4](https://github.com/TupiC/glypher/compare/v1.2.3...v1.2.4) (2026-03-02)
 
 
