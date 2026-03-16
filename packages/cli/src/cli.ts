@@ -39,7 +39,7 @@ program
     )
     .option(
         "-a, --axis <spec>",
-        "Slice variable font axes (e.g. ital,wght,wdth@0,400-900,100;0,400-900,75)",
+        "Slice variable font axes (e.g. ital,wght,wdth@0,400-900,100;0,400-900,75)"
     )
     .option(
         "-g, --glyphs <glyphs>",
@@ -76,18 +76,7 @@ program
             depth?: string;
             useRange?: boolean;
         }) => {
-            const {
-                input,
-                output,
-                format,
-                axis,
-                glyphs,
-                text,
-                range,
-                url,
-                depth,
-                useRange,
-            } = opts;
+            const { input, output, format, axis, glyphs, text, range, url, depth, useRange } = opts;
 
             // Handle crawl mode
             if (opts.crawl) {
@@ -217,7 +206,7 @@ program
 
             if (!format && !glyphs && !text && !range && !axis) {
                 console.error(
-                    "Error: At least one of -f, --format; -g --glyphs; -t --text; -r --range; -a --axis or --crawl must be specified",
+                    "Error: At least one of -f, --format; -g --glyphs; -t --text; -r --range; -a --axis or --crawl must be specified"
                 );
                 process.exit(1);
             }
@@ -246,7 +235,7 @@ program
                 const parsed = parseAxisSpec(axis);
                 if (!parsed) {
                     console.error(
-                        "Error: Invalid --axis format. Use: axis1,axis2@val1,val2;val1,val2 (e.g. ital,wght,wdth@0,400-900,100)",
+                        "Error: Invalid --axis format. Use: axis1,axis2@val1,val2;val1,val2 (e.g. ital,wght,wdth@0,400-900,100)"
                     );
                     process.exit(1);
                 }
@@ -256,7 +245,7 @@ program
                 const dir = path.dirname(input);
                 const defaultOutput = path.join(
                     dir,
-                    `${base}-sliced${format ? `.${format}` : ext}`,
+                    `${base}-sliced${format ? `.${format}` : ext}`
                 );
                 const outputPath = output ?? defaultOutput;
 
@@ -264,7 +253,7 @@ program
                     const slicedPaths = await axisSlice(
                         input,
                         parsed.combinations,
-                        outputPath,
+                        outputPath
                     );
 
                     // Apply subset and/or convert to each sliced output
@@ -272,7 +261,7 @@ program
                     for (const slicedPath of slicedPaths) {
                         const baseNoExt = path.basename(
                             slicedPath,
-                            path.extname(slicedPath),
+                            path.extname(slicedPath)
                         );
                         const outDir = path.dirname(slicedPath);
                         const finalPath = format
@@ -284,7 +273,7 @@ program
                                 slicedPath,
                                 finalPath,
                                 effectiveGlyphs,
-                                format,
+                                format
                             );
                             if (slicedPath !== finalPath)
                                 fs.unlinkSync(slicedPath);
@@ -309,7 +298,9 @@ program
                         }
                     }
 
-                    console.log(`Output written to: ${finalPaths.join(", ")}`);
+                    console.log(
+                        `Output written to: ${finalPaths.join(", ")}`
+                    );
                 } catch (err) {
                     console.error("Error during axis slicing:", err);
                     process.exit(1);
@@ -318,19 +309,14 @@ program
             }
 
             // Standard mode (no axis)
-            const outputPath = determineOutputPath(
-                input,
-                output,
-                format,
-                !format,
-            );
+            const outputPath = determineOutputPath(input, output, format, !format);
 
             if (effectiveGlyphs && format) {
                 performSubsetAndConvert(
                     input,
                     outputPath,
                     effectiveGlyphs,
-                    format,
+                    format
                 );
             } else if (effectiveGlyphs) {
                 subset(input, outputPath, effectiveGlyphs);

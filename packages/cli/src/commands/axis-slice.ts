@@ -10,7 +10,7 @@ import type { AxisLimits } from "../axis/parse";
 export function getSlicedOutputPath(
     outputPath: string,
     index: number,
-    totalCombinations: number,
+    totalCombinations: number
 ): string {
     const outExt = "ttf";
     const outDir = path.dirname(outputPath);
@@ -26,7 +26,7 @@ export function getSlicedOutputPath(
  */
 export function getAxisSliceFinalPath(
     slicedPath: string,
-    format?: string,
+    format?: string
 ): string {
     if (!format) return slicedPath;
     const outDir = path.dirname(slicedPath);
@@ -40,7 +40,7 @@ export function getAxisSliceFinalPath(
  */
 export function shouldUnlinkIntermediate(
     slicedPath: string,
-    finalPath: string,
+    finalPath: string
 ): boolean {
     return slicedPath !== finalPath;
 }
@@ -53,14 +53,14 @@ export function shouldUnlinkIntermediate(
 export async function axisSlice(
     inputPath: string,
     combinations: AxisLimits[],
-    outputPath: string,
+    outputPath: string
 ): Promise<string[]> {
     const { instantiateVariableFont } = await import("@web-alchemy/fonttools");
     const data = fs.readFileSync(inputPath);
 
     // Get font's actual axes - only pass limits for axes that exist
     const fontAxes: string[] = JSON.parse(
-        get_variable_font_axes(new Uint8Array(data)),
+        get_variable_font_axes(new Uint8Array(data))
     );
     const fontAxisSet = new Set(fontAxes.map((a) => a.toLowerCase()));
 
@@ -87,17 +87,21 @@ export async function axisSlice(
             slicedBuffer = Buffer.from(
                 await instantiateVariableFont(
                     new Uint8Array(data) as unknown as ArrayBuffer,
-                    axisLimits,
-                ),
+                    axisLimits
+                )
             );
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             throw new Error(
-                `Axis slicing failed (not a variable font?): ${msg}`,
+                `Axis slicing failed (not a variable font?): ${msg}`
             );
         }
 
-        const outPath = getSlicedOutputPath(outputPath, i, combinations.length);
+        const outPath = getSlicedOutputPath(
+            outputPath,
+            i,
+            combinations.length
+        );
 
         fs.writeFileSync(outPath, slicedBuffer);
         outputPaths.push(outPath);
