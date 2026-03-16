@@ -10,6 +10,10 @@ export default defineConfig({
                 __dirname,
                 "tests/__mocks__/glypher_wasm.ts"
             ),
+            "../wasm/glypher_wasm": path.resolve(
+                __dirname,
+                "tests/__mocks__/glypher_wasm.ts"
+            ),
         },
     },
 });
