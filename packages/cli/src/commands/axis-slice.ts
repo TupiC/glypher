@@ -4,6 +4,48 @@ import { get_variable_font_axes } from "../wasm/glypher_wasm";
 import type { AxisLimits } from "../axis/parse";
 
 /**
+ * Get the output path for a single axis slice. Single combo writes to outputPath;
+ * multiple combos use intermediate -N.ttf paths.
+ */
+export function getSlicedOutputPath(
+    outputPath: string,
+    index: number,
+    totalCombinations: number
+): string {
+    const outExt = "ttf";
+    const outDir = path.dirname(outputPath);
+    const outBase = path.basename(outputPath, path.extname(outputPath));
+    return totalCombinations > 1
+        ? path.join(outDir, `${outBase}-${index}.${outExt}`)
+        : outputPath;
+}
+
+/**
+ * Get the final output path for a sliced font (after optional format conversion).
+ * Used to determine whether the intermediate file should be unlinked.
+ */
+export function getAxisSliceFinalPath(
+    slicedPath: string,
+    format?: string
+): string {
+    if (!format) return slicedPath;
+    const outDir = path.dirname(slicedPath);
+    const baseNoExt = path.basename(slicedPath, path.extname(slicedPath));
+    return path.join(outDir, `${baseNoExt}.${format}`);
+}
+
+/**
+ * Whether the intermediate sliced file should be unlinked after conversion.
+ * Must not unlink when slicedPath === finalPath (single combo case).
+ */
+export function shouldUnlinkIntermediate(
+    slicedPath: string,
+    finalPath: string
+): boolean {
+    return slicedPath !== finalPath;
+}
+
+/**
  * Slice variable font axes using fonttools. Uses @web-alchemy/fonttools
  * (Pyodide-based fonttools) for variable font instancing.
  * Returns paths to the sliced font file(s).
@@ -23,10 +65,6 @@ export async function axisSlice(
     const fontAxisSet = new Set(fontAxes.map((a) => a.toLowerCase()));
 
     const outputPaths: string[] = [];
-    // Sliced output is TTF from fonttools; use .ttf for intermediate
-    const outExt = "ttf";
-    const outDir = path.dirname(outputPath);
-    const outBase = path.basename(outputPath, path.extname(outputPath));
 
     for (let i = 0; i < combinations.length; i++) {
         const limits = combinations[i];
@@ -59,10 +97,11 @@ export async function axisSlice(
             );
         }
 
-        const outPath =
-            combinations.length > 1
-                ? path.join(outDir, `${outBase}-${i}.${outExt}`)
-                : outputPath;
+        const outPath = getSlicedOutputPath(
+            outputPath,
+            i,
+            combinations.length
+        );
 
         fs.writeFileSync(outPath, slicedBuffer);
         outputPaths.push(outPath);
