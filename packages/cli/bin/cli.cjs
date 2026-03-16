@@ -738,6 +738,16 @@ function convert(inputPath, format, outputPath) {
 //#endregion
 //#region src/commands/axis-slice.ts
 /**
+* Get the output path for a single axis slice. Single combo writes to outputPath;
+* multiple combos use intermediate -N.ttf paths.
+*/
+function getSlicedOutputPath(outputPath, index, totalCombinations) {
+	const outExt = "ttf";
+	const outDir = path.default.dirname(outputPath);
+	const outBase = path.default.basename(outputPath, path.default.extname(outputPath));
+	return totalCombinations > 1 ? path.default.join(outDir, `${outBase}-${index}.${outExt}`) : outputPath;
+}
+/**
 * Slice variable font axes using fonttools. Uses @web-alchemy/fonttools
 * (Pyodide-based fonttools) for variable font instancing.
 * Returns paths to the sliced font file(s).
@@ -748,9 +758,6 @@ async function axisSlice(inputPath, combinations, outputPath) {
 	const fontAxes = JSON.parse((0, import_glypher_wasm.get_variable_font_axes)(new Uint8Array(data)));
 	const fontAxisSet = new Set(fontAxes.map((a) => a.toLowerCase()));
 	const outputPaths = [];
-	const outExt = "ttf";
-	const outDir = path.default.dirname(outputPath);
-	const outBase = path.default.basename(outputPath, path.default.extname(outputPath));
 	for (let i = 0; i < combinations.length; i++) {
 		const limits = combinations[i];
 		const axisLimits = {};
@@ -767,7 +774,7 @@ async function axisSlice(inputPath, combinations, outputPath) {
 			const msg = err instanceof Error ? err.message : String(err);
 			throw new Error(`Axis slicing failed (not a variable font?): ${msg}`);
 		}
-		const outPath = combinations.length > 1 ? path.default.join(outDir, `${outBase}-${i}.${outExt}`) : outputPath;
+		const outPath = getSlicedOutputPath(outputPath, i, combinations.length);
 		fs.default.writeFileSync(outPath, slicedBuffer);
 		outputPaths.push(outPath);
 	}
@@ -1011,18 +1018,18 @@ program.name("glypher").description("A font manipulation CLI tool").version(vers
 				const finalPath = format ? path.default.join(outDir, `${baseNoExt}.${format}`) : slicedPath;
 				if (effectiveGlyphs && format) {
 					performSubsetAndConvert(slicedPath, finalPath, effectiveGlyphs, format);
-					fs.default.unlinkSync(slicedPath);
+					if (slicedPath !== finalPath) fs.default.unlinkSync(slicedPath);
 					finalPaths.push(finalPath);
 				} else if (effectiveGlyphs) {
 					subset(slicedPath, slicedPath, effectiveGlyphs);
 					if (format) {
 						convert(slicedPath, format, finalPath);
-						fs.default.unlinkSync(slicedPath);
+						if (slicedPath !== finalPath) fs.default.unlinkSync(slicedPath);
 						finalPaths.push(finalPath);
 					} else finalPaths.push(slicedPath);
 				} else if (format) {
 					convert(slicedPath, format, finalPath);
-					fs.default.unlinkSync(slicedPath);
+					if (slicedPath !== finalPath) fs.default.unlinkSync(slicedPath);
 					finalPaths.push(finalPath);
 				} else finalPaths.push(slicedPath);
 			}
