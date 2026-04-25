@@ -1,3 +1,10 @@
+## [1.2.6](https://github.com/TupiC/glypher/compare/v1.2.5...v1.2.6) (2026-04-25)
+
+
+### Bug Fixes
+
+* **axis-slice:** compare resolved paths before deleting intermediates ([#11](https://github.com/TupiC/glypher/issues/11)) ([2d96c0f](https://github.com/TupiC/glypher/commit/2d96c0f3ed0690a631858ec4e8b7e5f83181f978))
+
 ## [1.2.5](https://github.com/TupiC/glypher/compare/v1.2.4...v1.2.5) (2026-03-16)
 
 
