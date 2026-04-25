@@ -278,6 +278,8 @@ program
                         const finalPath = format
                             ? path.join(outDir, `${baseNoExt}.${format}`)
                             : slicedPath;
+                        const shouldDeleteIntermediate =
+                            path.resolve(slicedPath) !== path.resolve(finalPath);
 
                         if (effectiveGlyphs && format) {
                             performSubsetAndConvert(
@@ -286,14 +288,14 @@ program
                                 effectiveGlyphs,
                                 format,
                             );
-                            if (slicedPath !== finalPath)
+                            if (shouldDeleteIntermediate)
                                 fs.unlinkSync(slicedPath);
                             finalPaths.push(finalPath);
                         } else if (effectiveGlyphs) {
                             subset(slicedPath, slicedPath, effectiveGlyphs);
                             if (format) {
                                 convert(slicedPath, format, finalPath);
-                                if (slicedPath !== finalPath)
+                                if (shouldDeleteIntermediate)
                                     fs.unlinkSync(slicedPath);
                                 finalPaths.push(finalPath);
                             } else {
@@ -301,7 +303,7 @@ program
                             }
                         } else if (format) {
                             convert(slicedPath, format, finalPath);
-                            if (slicedPath !== finalPath)
+                            if (shouldDeleteIntermediate)
                                 fs.unlinkSync(slicedPath);
                             finalPaths.push(finalPath);
                         } else {

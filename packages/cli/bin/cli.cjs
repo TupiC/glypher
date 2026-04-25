@@ -872,7 +872,7 @@ function parseAxisSpec(spec) {
 
 //#endregion
 //#region package.json
-var version = "1.2.4";
+var version = "1.2.5";
 
 //#endregion
 //#region src/utils.ts
@@ -1016,20 +1016,21 @@ program.name("glypher").description("A font manipulation CLI tool").version(vers
 				const baseNoExt = path.default.basename(slicedPath, path.default.extname(slicedPath));
 				const outDir = path.default.dirname(slicedPath);
 				const finalPath = format ? path.default.join(outDir, `${baseNoExt}.${format}`) : slicedPath;
+				const shouldDeleteIntermediate = path.default.resolve(slicedPath) !== path.default.resolve(finalPath);
 				if (effectiveGlyphs && format) {
 					performSubsetAndConvert(slicedPath, finalPath, effectiveGlyphs, format);
-					if (slicedPath !== finalPath) fs.default.unlinkSync(slicedPath);
+					if (shouldDeleteIntermediate) fs.default.unlinkSync(slicedPath);
 					finalPaths.push(finalPath);
 				} else if (effectiveGlyphs) {
 					subset(slicedPath, slicedPath, effectiveGlyphs);
 					if (format) {
 						convert(slicedPath, format, finalPath);
-						if (slicedPath !== finalPath) fs.default.unlinkSync(slicedPath);
+						if (shouldDeleteIntermediate) fs.default.unlinkSync(slicedPath);
 						finalPaths.push(finalPath);
 					} else finalPaths.push(slicedPath);
 				} else if (format) {
 					convert(slicedPath, format, finalPath);
-					if (slicedPath !== finalPath) fs.default.unlinkSync(slicedPath);
+					if (shouldDeleteIntermediate) fs.default.unlinkSync(slicedPath);
 					finalPaths.push(finalPath);
 				} else finalPaths.push(slicedPath);
 			}
